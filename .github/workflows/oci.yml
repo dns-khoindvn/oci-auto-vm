@@ -24,7 +24,7 @@ jobs:
         run: |
           mkdir -p ~/.oci
           python3 << 'PYEOF'
-          import os
+          import os, base64
           home = os.path.expanduser('~')
           config = '\n'.join([
             '[DEFAULT]',
@@ -37,8 +37,9 @@ jobs:
           ])
           with open(home + '/.oci/config', 'w') as f:
             f.write(config)
+          key = base64.b64decode(os.environ['OCI_KEY']).decode('utf-8')
           with open(home + '/.oci/key.pem', 'w') as f:
-            f.write(os.environ['OCI_KEY'])
+            f.write(key)
           PYEOF
           chmod 600 ~/.oci/key.pem ~/.oci/config
 
