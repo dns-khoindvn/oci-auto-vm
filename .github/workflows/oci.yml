@@ -44,11 +44,12 @@ jobs:
           PYEOF
           chmod 600 ~/.oci/key.pem ~/.oci/config
 
-      - name: Create VM
+- name: Create VM
         run: |
           echo "$SSH_KEY" > /tmp/ssh_key.pub
           oci compute instance launch \
             --profile DEFAULT \
+            --debug \
             --availability-domain "AP-SINGAPORE-1-AD-1" \
             --compartment-id "$OCI_COMPARTMENT" \
             --shape "VM.Standard.A1.Flex" \
@@ -57,4 +58,4 @@ jobs:
             --subnet-id "$OCI_SUBNET" \
             --assign-public-ip true \
             --boot-volume-size-in-gbs 50 \
-            --ssh-authorized-keys-file /tmp/ssh_key.pub
+            --ssh-authorized-keys-file /tmp/ssh_key.pub 2>&1 | tail -50
