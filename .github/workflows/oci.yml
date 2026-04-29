@@ -1,16 +1,3 @@
-name: OCI Auto Create VM
-on:
-  schedule:
-    - cron: '*/30 * * * *'
-  workflow_dispatch:
-
-jobs:
-  create:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Install OCI CLI
-        run: pip install oci-cli
-
       - name: Configure OCI
         env:
           OCI_USER: ${{ secrets.OCI_USER_OCID }}
@@ -19,27 +6,18 @@ jobs:
           OCI_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
         run: |
           mkdir -p ~/.oci
-          printf "[DEFAULT]\nuser=%s\nfingerprint=%s\ntenancy=%s\nregion=ap-singapore-1\nkey_file=%s\n" \
-            "$OCI_USER" "$OCI_FINGERPRINT" "$OCI_TENANCY" "$HOME/.oci/key.pem" > ~/.oci/config
-          echo "$OCI_KEY" > ~/.oci/key.pem
+          cat > ~/.oci/config << EOF
+[DEFAULT]
+user=${OCI_USER}
+fingerprint=${OCI_FINGERPRINT}
+tenancy=${OCI_TENANCY}
+region=ap-singapore-1
+key_file=${HOME}/.oci/key.pem
+EOF
+          printf '%s' "${OCI_KEY}" > ~/.oci/key.pem
           chmod 600 ~/.oci/key.pem
           chmod 600 ~/.oci/config
-
-      - name: Create VM
-        env:
-          OCI_COMPARTMENT: ${{ secrets.OCI_COMPARTMENT_ID }}
-          OCI_IMAGE: ${{ secrets.OCI_IMAGE_ID }}
-          OCI_SUBNET: ${{ secrets.OCI_SUBNET_ID }}
-          SSH_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
-        run: |
-          echo "$SSH_KEY" > /tmp/ssh_key.pub
-          oci compute instance launch \
-            --availability-domain "AP-SINGAPORE-1-AD-1" \
-            --compartment-id "$OCI_COMPARTMENT" \
-            --shape "VM.Standard.A1.Flex" \
-            --shape-config '{"ocpus":4,"memoryInGBs":24}' \
-            --image-id "$OCI_IMAGE" \
-            --subnet-id "$OCI_SUBNET" \
-            --assign-public-ip true \
-            --boot-volume-size-in-gbs 50 \
-            --ssh-authorized-keys-file /tmp/ssh_key.pub
+          echo "=== CONFIG ==="
+          cat ~/.oci/config
+          echo "=== KEY HEAD ==="
+          head -1 ~/.oci/key.pem
