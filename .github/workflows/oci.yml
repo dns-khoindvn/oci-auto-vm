@@ -39,14 +39,10 @@ jobs:
           PYEOF
           chmod 600 ~/.oci/key.pem ~/.oci/config
 
-      - name: Verify config
+      - name: Verify auth
         run: |
-          echo "=== Config ==="
-          cat ~/.oci/config | cat -A
-          echo "=== Key head ==="
-          head -1 ~/.oci/key.pem
-          echo "=== Key tail ==="
-          tail -1 ~/.oci/key.pem
+          echo "=== Test auth ==="
+          oci iam user get --user-id "$OCI_USER" --profile DEFAULT 2>&1 | head -10
 
       - name: Create VM
         run: |
