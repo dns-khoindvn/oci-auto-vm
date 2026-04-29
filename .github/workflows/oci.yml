@@ -30,9 +30,8 @@ jobs:
           user = os.environ['OCI_USER'].strip()
           fingerprint = os.environ['OCI_FINGERPRINT'].strip()
           tenancy = os.environ['OCI_TENANCY'].strip()
-          print("USER:", user)
-          print("FINGERPRINT:", fingerprint)
-          print("TENANCY:", tenancy[:30])
+          print("USER_B64:", base64.b64encode(user.encode()).decode())
+          print("FP_B64:", base64.b64encode(fingerprint.encode()).decode())
           config = '[DEFAULT]\nuser=' + user + '\nfingerprint=' + fingerprint + '\ntenancy=' + tenancy + '\nregion=ap-singapore-1\nkey_file=' + home + '/.oci/key.pem\n'
           with open(home + '/.oci/config', 'w') as f:
             f.write(config)
