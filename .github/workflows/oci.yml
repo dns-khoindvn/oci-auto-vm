@@ -23,23 +23,17 @@ jobs:
       - name: Configure OCI
         run: |
           mkdir -p ~/.oci
-          cat > ~/.oci/config << 'OCICONFIG'
-[DEFAULT]
-user=PLACEHOLDER_USER
-fingerprint=PLACEHOLDER_FP
-tenancy=PLACEHOLDER_TENANCY
-region=ap-singapore-1
-key_file=/home/runner/.oci/key.pem
-OCICONFIG
-          sed -i "s|PLACEHOLDER_USER|$OCI_USER|g" ~/.oci/config
-          sed -i "s|PLACEHOLDER_FP|$OCI_FINGERPRINT|g" ~/.oci/config
-          sed -i "s|PLACEHOLDER_TENANCY|$OCI_TENANCY|g" ~/.oci/config
-          printf '%s' "$OCI_KEY" > ~/.oci/key.pem
+          python3 -c "
+import os
+config = '[DEFAULT]\nuser=' + os.environ['OCI_USER'] + '\nfingerprint=' + os.environ['OCI_FINGERPRINT'] + '\ntenancy=' + os.environ['OCI_TENANCY'] + '\nregion=ap-singapore-1\nkey_file=' + os.path.expanduser('~') + '/.oci/key.pem\n'
+open(os.path.expanduser('~/.oci/config'), 'w').write(config)
+open(os.path.expanduser('~/.oci/key.pem'), 'w').write(os.environ['OCI_KEY'])
+"
           chmod 600 ~/.oci/key.pem ~/.oci/config
           cat ~/.oci/config
           head -1 ~/.oci/key.pem
           tail -1 ~/.oci/key.pem
-
+          
       - name: Create VM
         run: |
           echo "$SSH_KEY" > /tmp/ssh_key.pub
