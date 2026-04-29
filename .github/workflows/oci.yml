@@ -16,7 +16,7 @@ jobs:
       OCI_IMAGE: ${{ secrets.OCI_IMAGE_ID }}
       OCI_SUBNET: ${{ secrets.OCI_SUBNET_ID }}
       SSH_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
-      OCI_CLI_SUPPRESS_FILE_PERMISSIONS_WARNING: True
+      OCI_CLI_SUPPRESS_FILE_PERMISSIONS_WARNING: "True"
     steps:
       - name: Install OCI CLI
         run: pip install oci-cli
@@ -44,18 +44,7 @@ jobs:
           PYEOF
           chmod 600 ~/.oci/key.pem ~/.oci/config
 
-- name: Create VM
+      - name: Create VM
         run: |
           echo "$SSH_KEY" > /tmp/ssh_key.pub
-          oci compute instance launch \
-            --profile DEFAULT \
-            --debug \
-            --availability-domain "AP-SINGAPORE-1-AD-1" \
-            --compartment-id "$OCI_COMPARTMENT" \
-            --shape "VM.Standard.A1.Flex" \
-            --shape-config '{"ocpus":4,"memoryInGBs":24}' \
-            --image-id "$OCI_IMAGE" \
-            --subnet-id "$OCI_SUBNET" \
-            --assign-public-ip true \
-            --boot-volume-size-in-gbs 50 \
-            --ssh-authorized-keys-file /tmp/ssh_key.pub 2>&1 | tail -50
+          oci compute instance launch --profile DEFAULT --debug --availability-domain "AP-SINGAPORE-1-AD-1" --compartment-id "$OCI_COMPARTMENT" --shape "VM.Standard.A1.Flex" --shape-config '{"ocpus":4,"memoryInGBs":24}' --image-id "$OCI_IMAGE" --subnet-id "$OCI_SUBNET" --assign-public-ip true --boot-volume-size-in-gbs 50 --ssh-authorized-keys-file /tmp/ssh_key.pub 2>&1 | tail -80
