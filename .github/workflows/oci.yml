@@ -27,18 +27,13 @@ jobs:
           python3 << 'PYEOF'
           import os, base64
           home = os.path.expanduser('~')
-          config = '\n'.join([
-            '[DEFAULT]',
-            'user=' + os.environ['OCI_USER'],
-            'fingerprint=' + os.environ['OCI_FINGERPRINT'],
-            'tenancy=' + os.environ['OCI_TENANCY'],
-            'region=ap-singapore-1',
-            'key_file=' + home + '/.oci/key.pem',
-            ''
-          ])
+          user = os.environ['OCI_USER'].strip()
+          fingerprint = os.environ['OCI_FINGERPRINT'].strip()
+          tenancy = os.environ['OCI_TENANCY'].strip()
+          config = '[DEFAULT]\nuser=' + user + '\nfingerprint=' + fingerprint + '\ntenancy=' + tenancy + '\nregion=ap-singapore-1\nkey_file=' + home + '/.oci/key.pem\n'
           with open(home + '/.oci/config', 'w') as f:
             f.write(config)
-          key = base64.b64decode(os.environ['OCI_KEY']).decode('utf-8')
+          key = base64.b64decode(os.environ['OCI_KEY'].strip()).decode('utf-8')
           with open(home + '/.oci/key.pem', 'w') as f:
             f.write(key)
           PYEOF
