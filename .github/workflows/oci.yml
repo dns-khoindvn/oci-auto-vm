@@ -41,10 +41,12 @@ jobs:
 
       - name: Verify auth
         run: |
-          echo "=== Test auth ==="
-          oci iam user get --user-id "$OCI_USER" --profile DEFAULT 2>&1 | head -10
-
-      - name: Create VM
-        run: |
-          echo "$SSH_KEY" > /tmp/ssh_key.pub
-          oci compute instance launch --profile DEFAULT --availability-domain "AP-SINGAPORE-1-AD-1" --compartment-id "$OCI_COMPARTMENT" --shape "VM.Standard.A1.Flex" --shape-config '{"ocpus":4,"memoryInGBs":24}' --image-id "$OCI_IMAGE" --subnet-id "$OCI_SUBNET" --assign-public-ip true --boot-volume-size-in-gbs 50 --ssh-authorized-keys-file /tmp/ssh_key.pub
+          python3 << 'PYEOF'
+          import os, base64
+          key = base64.b64decode(os.environ['OCI_KEY'].strip()).decode('utf-8')
+          lines = key.split('\n')
+          print("First line:", lines[0])
+          print("Last line:", lines[-2] if lines[-1] == '' else lines[-1])
+          print("Total lines:", len(lines))
+          PYEOF
+          oci iam user get --user-id "$OCI_USER" --profile DEFAULT 2>&1 | head -5
