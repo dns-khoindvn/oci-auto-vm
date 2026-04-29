@@ -23,17 +23,25 @@ jobs:
       - name: Configure OCI
         run: |
           mkdir -p ~/.oci
-          python3 -c "
-import os
-config = '[DEFAULT]\nuser=' + os.environ['OCI_USER'] + '\nfingerprint=' + os.environ['OCI_FINGERPRINT'] + '\ntenancy=' + os.environ['OCI_TENANCY'] + '\nregion=ap-singapore-1\nkey_file=' + os.path.expanduser('~') + '/.oci/key.pem\n'
-open(os.path.expanduser('~/.oci/config'), 'w').write(config)
-open(os.path.expanduser('~/.oci/key.pem'), 'w').write(os.environ['OCI_KEY'])
-"
+          python3 << 'PYEOF'
+          import os
+          home = os.path.expanduser('~')
+          config = '\n'.join([
+            '[DEFAULT]',
+            'user=' + os.environ['OCI_USER'],
+            'fingerprint=' + os.environ['OCI_FINGERPRINT'],
+            'tenancy=' + os.environ['OCI_TENANCY'],
+            'region=ap-singapore-1',
+            'key_file=' + home + '/.oci/key.pem',
+            ''
+          ])
+          with open(home + '/.oci/config', 'w') as f:
+            f.write(config)
+          with open(home + '/.oci/key.pem', 'w') as f:
+            f.write(os.environ['OCI_KEY'])
+          PYEOF
           chmod 600 ~/.oci/key.pem ~/.oci/config
-          cat ~/.oci/config
-          head -1 ~/.oci/key.pem
-          tail -1 ~/.oci/key.pem
-          
+
       - name: Create VM
         run: |
           echo "$SSH_KEY" > /tmp/ssh_key.pub
