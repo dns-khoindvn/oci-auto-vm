@@ -23,12 +23,8 @@ jobs:
       - name: Configure OCI
         run: |
           mkdir -p ~/.oci
-          echo "[DEFAULT]" > ~/.oci/config
-          echo "user=$OCI_USER" >> ~/.oci/config
-          echo "fingerprint=$OCI_FINGERPRINT" >> ~/.oci/config
-          echo "tenancy=$OCI_TENANCY" >> ~/.oci/config
-          echo "region=ap-singapore-1" >> ~/.oci/config
-          echo "key_file=$HOME/.oci/key.pem" >> ~/.oci/config
+          printf '[DEFAULT]\nuser=%s\nfingerprint=%s\ntenancy=%s\nregion=ap-singapore-1\nkey_file=%s/.oci/key.pem\n' \
+            "$OCI_USER" "$OCI_FINGERPRINT" "$OCI_TENANCY" "$HOME" > ~/.oci/config
           printf '%s' "$OCI_KEY" > ~/.oci/key.pem
           chmod 600 ~/.oci/key.pem
           chmod 600 ~/.oci/config
