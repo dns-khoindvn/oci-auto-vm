@@ -1,0 +1,39 @@
+name: OCI Auto Create VM
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+jobs:
+  create:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install OCI CLI
+        run: pip install oci-cli
+
+      - name: Configure OCI
+        run: |
+          mkdir -p ~/.oci
+          cat > ~/.oci/config << 'EOF'
+          [DEFAULT]
+          user=${{ secrets.OCI_USER_OCID }}
+          fingerprint=${{ secrets.OCI_FINGERPRINT }}
+          tenancy=${{ secrets.OCI_TENANCY_OCID }}
+          region=ap-singapore-1
+          key_file=~/.oci/key.pem
+          EOF
+          echo "${{ secrets.OCI_PRIVATE_KEY }}" > ~/.oci/key.pem
+          chmod 600 ~/.oci/key.pem
+
+      - name: Create VM
+        run: |
+          oci compute instance launch \
+            --availability-domain "AP-SINGAPORE-1-AD-1" \
+            --compartment-id "${{ secrets.OCI_COMPARTMENT_ID }}" \
+            --shape "VM.Standard.A1.Flex" \
+            --shape-config '{"ocpus":4,"memoryInGBs":24}' \
+            --image-id "${{ secrets.OCI_IMAGE_ID }}" \
+            --subnet-id "${{ secrets.OCI_SUBNET_ID }}" \
+            --assign-public-ip true \
+            --boot-volume-size-in-gbs 50 \
+            --ssh-authorized-keys-file <(echo "${{ secrets.SSH_PUBLIC_KEY }}")
