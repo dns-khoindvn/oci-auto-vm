@@ -44,7 +44,16 @@ jobs:
           PYEOF
           chmod 600 ~/.oci/key.pem ~/.oci/config
 
+      - name: Verify config
+        run: |
+          echo "=== Config ==="
+          cat ~/.oci/config | cat -A
+          echo "=== Key head ==="
+          head -1 ~/.oci/key.pem
+          echo "=== Key tail ==="
+          tail -1 ~/.oci/key.pem
+
       - name: Create VM
         run: |
           echo "$SSH_KEY" > /tmp/ssh_key.pub
-          oci compute instance launch --profile DEFAULT --debug --availability-domain "AP-SINGAPORE-1-AD-1" --compartment-id "$OCI_COMPARTMENT" --shape "VM.Standard.A1.Flex" --shape-config '{"ocpus":4,"memoryInGBs":24}' --image-id "$OCI_IMAGE" --subnet-id "$OCI_SUBNET" --assign-public-ip true --boot-volume-size-in-gbs 50 --ssh-authorized-keys-file /tmp/ssh_key.pub 2>&1 | tail -80
+          oci compute instance launch --profile DEFAULT --availability-domain "AP-SINGAPORE-1-AD-1" --compartment-id "$OCI_COMPARTMENT" --shape "VM.Standard.A1.Flex" --shape-config '{"ocpus":4,"memoryInGBs":24}' --image-id "$OCI_IMAGE" --subnet-id "$OCI_SUBNET" --assign-public-ip true --boot-volume-size-in-gbs 50 --ssh-authorized-keys-file /tmp/ssh_key.pub
