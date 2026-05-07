@@ -1,0 +1,4 @@
+Để chạy được dự án này, trước tiên phải có nodejs, (lên google tải nodejs nếu chưa có)
+bước 1: cd đến đường dẫn thư mục này
+bước 2: lệnh npm install (để cài thư viện)
+bước 3: lệnh node server.js để chạy dự án, chạy xong thì truy cập http://localhost:3000/ để dùng
