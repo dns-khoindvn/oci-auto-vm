@@ -25,22 +25,32 @@ function getKeys(req) {
 }
 
 // ─── SYSTEM PROMPT ───────────────────────────────────────────────────────────
-const VIDEO_SYSTEM_PROMPT = `You are an elite video script director and creative storyteller. Your task is to transform any topic into a professional, cinematic video script in strict JSON format.
+const VIDEO_SYSTEM_PROMPT = `You are an elite video script director. You handle TWO modes:
 
-OUTPUT RULES (CRITICAL):
-- Respond with ONLY valid JSON. No markdown code blocks, no explanation, no text before or after.
+MODE A — USER PROVIDES A FULL SCRIPT:
+If the user input is already a written script (long text, has paragraphs, sections like "PHẦN 1", "Phần Mở đầu", "Cảnh:", structured content with specific facts/details), your job is to SPLIT it into scenes — DO NOT rewrite or invent new content.
+- Preserve the user's original wording, facts, names, numbers as much as possible.
+- Break content into 5-12 scenes based on natural breaks (paragraphs, "PHẦN" markers, topic shifts).
+- For each scene, extract a short punchy sceneTitle (max 5 words) and use the user's text as narration.
+- You MAY lightly clean up narration so it sounds natural when spoken aloud (remove stage directions like "(Cảnh: ...)", remove markdown), but DO NOT add new content the user didn't write.
+
+MODE B — USER PROVIDES ONLY A TOPIC:
+If the user input is short (a single sentence or a topic like "Trí tuệ nhân tạo"), then create an original cinematic script from scratch.
+
+OUTPUT RULES (CRITICAL — applies to both modes):
+- Respond with ONLY valid JSON. No markdown code blocks, no explanation.
 - The JSON must be parseable by JSON.parse() directly.
 
 JSON STRUCTURE:
 {
-  "videoTitle": "Catchy, compelling title of the entire video",
+  "videoTitle": "Catchy title (extract from script if Mode A, create if Mode B)",
   "style": "cinematic | educational | promotional | documentary | motivational",
   "totalDuration": estimated_total_seconds_as_number,
   "scenes": [
     {
       "id": 1,
       "sceneTitle": "SHORT TITLE (MAX 5 WORDS)",
-      "narration": "Full narration spoken aloud. Write as natural speech, 2-5 sentences. This is what the AI voice will say.",
+      "narration": "Spoken text. Mode A: user's content. Mode B: your creation.",
       "accentColor": "#hexcolor",
       "animationStyle": "slide-up | slide-left | zoom-in | fade-in | typewriter",
       "backgroundTheme": "tech | nature | abstract | space | corporate | minimal",
@@ -50,18 +60,14 @@ JSON STRUCTURE:
 }
 
 CREATIVE RULES:
-- sceneTitle: MAXIMUM 5 WORDS. Short, punchy, powerful. This is displayed BIG on screen.
-- narration: Natural conversational speech. 2-5 sentences. 8-20 seconds when spoken aloud.
-- Create 5-9 scenes for a complete, well-paced video
-- Scene 1: Hook / Introduction (grab attention)
-- Middle scenes: Core content, each covering one key idea
-- Last scene: Conclusion, summary, or call-to-action
-- Vary accentColors across scenes for visual variety. Use vibrant colors: #00d4ff, #7c3aed, #10b981, #f59e0b, #ef4444, #8b5cf6, #06b6d4, #84cc16
-- Vary animationStyles for dynamic feel
-- estimatedDuration: 8-18 seconds per scene
-- Make narration engaging, emotional, and memorable - NOT dry or corporate
+- sceneTitle: MAX 5 WORDS. Short, punchy.
+- narration in Mode A: keep user's voice; just tidy it up for TTS (remove parenthetical stage notes, fix run-on sentences). Each scene's narration: 2-6 sentences.
+- narration in Mode B: 2-5 sentences, natural conversational speech.
+- Vary accentColors: #00d4ff, #7c3aed, #10b981, #f59e0b, #ef4444, #8b5cf6, #06b6d4, #84cc16
+- Vary animationStyles for dynamic feel.
+- estimatedDuration: 8-20 seconds per scene.
 
-LANGUAGE: Match the language of the user's request (Vietnamese if asked in Vietnamese, English if in English, etc.)`;
+LANGUAGE: Match the language of the user's input.`;
 
 // ─── ROUTES ──────────────────────────────────────────────────────────────────
 
@@ -87,14 +93,17 @@ app.post('/api/generate-script', async (req, res) => {
 
   try {
     const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${geminiApiKey}`,
       {
         system_instruction: { parts: [{ text: VIDEO_SYSTEM_PROMPT }] },
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: {
-          temperature: 0.8,
-          maxOutputTokens: 4096,
+          temperature: 0.7,
+          maxOutputTokens: 32768,
           response_mime_type: 'application/json',
+          thinkingConfig: {
+            thinkingBudget: 4096,
+          },
         },
       },
       { headers: { 'Content-Type': 'application/json' } }
@@ -112,6 +121,7 @@ app.post('/api/generate-script', async (req, res) => {
       scriptData = JSON.parse(text);
     } catch (parseErr) {
       try {
+        // Thử 1: Bỏ trailing comma
         let cleanedText = text.replace(/,\s*([\]}])/g, '$1');
         const match = cleanedText.match(/\{[\s\S]*\}/);
         if (match) {
@@ -120,8 +130,24 @@ app.post('/api/generate-script', async (req, res) => {
           throw parseErr;
         }
       } catch (innerErr) {
-        console.error('Lỗi phân tích JSON gốc:', text);
-        throw new Error('Không thể phân tích JSON từ Gemini: ' + text.slice(0, 200));
+        // Thử 2: JSON bị cắt giữa chừng — cắt đến scene cuối hợp lệ và đóng lại
+        try {
+          let salvaged = text;
+          // Tìm scene cuối có vẻ hoàn chỉnh (kết thúc bằng })
+          const lastValidScene = salvaged.lastIndexOf('},');
+          if (lastValidScene > 0) {
+            salvaged = salvaged.substring(0, lastValidScene + 1) + ']}';
+            // Bỏ trailing comma nếu còn
+            salvaged = salvaged.replace(/,\s*([\]}])/g, '$1');
+            scriptData = JSON.parse(salvaged);
+            console.warn('JSON bị cắt giữa chừng, đã salvage được', scriptData.scenes?.length, 'scenes');
+          } else {
+            throw innerErr;
+          }
+        } catch (salvageErr) {
+          console.error('Lỗi phân tích JSON gốc:', text);
+          throw new Error('Không thể phân tích JSON từ Gemini. Thử lại với prompt ngắn hơn hoặc model khác. Snippet: ' + text.slice(0, 200));
+        }
       }
     }
 

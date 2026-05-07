@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TuanDevTop</title>
+  <meta name="description" content="Công cụ tạo video AI tự động chuyên nghiệp bởi TuanDevTop." />
+  <link rel="stylesheet" href="style.css" />
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body>
+<div class="app-wrapper">
+
+  <!-- ══ HEADER ══════════════════════════════════════════════════════════════ -->
+  <header class="header">
+    <div class="header-inner">
+      <a href="#" class="logo">
+        <div class="logo-icon">
+          <i data-lucide="video" style="width:18px;height:18px;"></i>
+        </div>
+        TuanDev<span style="color: #a855f7; font-weight: 900;">Top</span>
+      </a>
+      <div class="header-actions">
+        <button class="btn btn-secondary btn-icon" id="settingsBtn" data-tooltip="Cài đặt API">
+          <i data-lucide="settings-2" style="width:16px;height:16px;"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ══ MAIN ════════════════════════════════════════════════════════════════ -->
+  <main class="main-content">
+
+    <!-- ── LEFT PANEL ────────────────────────────────────────────────────── -->
+    <aside style="display:flex;flex-direction:column;gap:1.5rem;">
+
+      <!-- Generate Script Panel -->
+      <div class="panel" id="generatePanel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <i data-lucide="sparkles" style="width:16px;height:16px;"></i>
+            Tạo Video AI
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="form-group">
+            <label class="form-label" for="videoPrompt">
+              <i data-lucide="message-square" style="width:13px;height:13px;"></i>
+              Kịch bản hoặc chủ đề video
+            </label>
+            <textarea
+              id="videoPrompt"
+              class="form-textarea"
+              rows="12"
+              style="min-height:240px;font-family:inherit;"
+              placeholder="Cách 1 — Dán kịch bản có sẵn:&#10;PHẦN 1: MỞ ĐẦU&#10;Đây là nội dung phần mở đầu...&#10;&#10;PHẦN 2: NỘI DUNG CHÍNH&#10;...&#10;&#10;Cách 2 — Chỉ nhập chủ đề:&#10;Trí tuệ nhân tạo và tương lai loài người"
+            ></textarea>
+            <div style="font-size:11px;color:#94a3b8;margin-top:6px;line-height:1.5;">
+              💡 Bạn có thể dán <strong>kịch bản có sẵn</strong> (AI sẽ chia cảnh, giữ nguyên nội dung) hoặc chỉ nhập <strong>chủ đề</strong> (AI tự sáng tạo).
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="videoStyle">
+              <i data-lucide="palette" style="width:13px;height:13px;"></i>
+              Phong cách video
+            </label>
+            <select id="videoStyle" class="form-select">
+              <option value="">Để AI tự chọn</option>
+              <option value="cinematic">Cinematic — Điện ảnh</option>
+              <option value="educational">Educational — Giáo dục</option>
+              <option value="promotional">Promotional — Quảng bá</option>
+              <option value="documentary">Documentary — Tài liệu</option>
+              <option value="motivational">Motivational — Truyền cảm hứng</option>
+            </select>
+          </div>
+
+          <button class="btn btn-primary btn-full" id="generateScriptBtn" onclick="handleGenerate()">
+            <i data-lucide="wand-2" style="width:15px;height:15px;"></i>
+            Tạo video ngay
+          </button>
+        </div>
+      </div>
+
+      <!-- Script Preview Panel (Hidden completely as requested) -->
+      <div id="scriptPanel" style="display:none;"></div>
+
+      <!-- Audio Settings -->
+      <div class="panel" id="audioPanel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <i data-lucide="mic-2" style="width:16px;height:16px;"></i>
+            Giọng đọc
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="tabs">
+            <button class="tab-btn active" data-tab="free" id="tabFree">
+              <i data-lucide="zap" style="width:13px;height:13px;"></i>
+              Miễn phí
+            </button>
+            <button class="tab-btn" data-tab="elevenlabs" id="tabElevenLabs">
+              <i data-lucide="volume-2" style="width:13px;height:13px;"></i>
+              ElevenLabs
+            </button>
+          </div>
+
+          <div class="tab-content active" id="tab-free">
+            <div class="alert alert-success" style="font-size:0.775rem; margin-bottom: 0.75rem;">
+              <i data-lucide="sparkles" style="width:14px;height:14px;flex-shrink:0;"></i>
+              <span>Giọng đọc Tiếng Việt chất lượng cao.</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tốc độ đọc</label>
+              <input type="range" id="speechRate" min="0.5" max="2.0" step="0.1" value="1.0" style="width:100%;accent-color:#a855f7;" />
+              <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-muted);">
+                <span>Chậm</span><span id="rateLabel">1.0x</span><span>Nhanh</span>
+              </div>
+            </div>
+            <div class="form-group" style="margin-top: 0.5rem;">
+              <button class="btn btn-secondary btn-full btn-sm" id="testVoiceFreeBtn">
+                <i data-lucide="play-circle" style="width:14px;height:14px;"></i>
+                Nghe thử mẫu
+              </button>
+            </div>
+          </div>
+
+          <div class="tab-content" id="tab-elevenlabs">
+            <div class="form-group">
+              <label class="form-label">Chọn giọng</label>
+              <select id="voiceSelect" class="form-select">
+                <option value="EXAVITQu4vr4xnSDxMaL">Sarah (Default)</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-top: 0.5rem;">
+              <button class="btn btn-secondary btn-full btn-sm" id="testVoiceBtn">
+                <i data-lucide="play-circle" style="width:14px;height:14px;"></i>
+                Nghe thử
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- ── RIGHT PANEL ───────────────────────────────────────────────────── -->
+    <div class="video-panel">
+
+      <!-- Canvas -->
+      <div class="panel">
+        <div class="canvas-container">
+          <canvas id="videoCanvas" width="1280" height="720"></canvas>
+          <div class="canvas-overlay" id="canvasOverlay">
+            <div class="canvas-overlay-icon">
+              <i data-lucide="clapperboard" style="width:32px;height:32px;color:#fff;"></i>
+            </div>
+            <h3>TuanDevTop</h3>
+            <p>Nhập nội dung và bắt đầu tạo ngay video chuyên nghiệp</p>
+          </div>
+        </div>
+
+        <!-- Progress -->
+        <div class="progress-section" id="progressSection" style="display:none;">
+          <div class="progress-info">
+            <span class="progress-label" id="progressLabel">Đang tạo...</span>
+            <span class="progress-pct" id="progressPct">0%</span>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progressBar" style="width:0%;"></div>
+          </div>
+        </div>
+
+        <!-- Video Controls -->
+        <div class="video-controls">
+          <button class="btn btn-secondary btn-icon" id="playStopBtn" disabled data-tooltip="Xem thử / Dừng">
+            <i data-lucide="play" id="playStopIcon" style="width:18px;height:18px;"></i>
+          </button>
+          
+          <div style="flex:1;"></div>
+
+          <button class="btn btn-ghost" id="resetBtn" style="gap: 6px; padding: 0 12px;">
+            <i data-lucide="sparkles" style="width:16px;height:16px;"></i>
+            <span style="font-size: 0.85rem; font-weight: 600;">Phiên mới</span>
+          </button>
+        </div>
+        
+        <!-- Logs (Will be hidden/cleared in app.js) -->
+        <div class="log-panel" id="logPanel" style="display:none;"></div>
+
+      </div>
+
+      <!-- Download Section -->
+      <div class="panel" id="downloadSection" style="display:none;">
+        <div class="download-ready">
+          <div class="download-icon" style="background: #a855f7;">
+            <i data-lucide="check-circle-2" style="width:36px;height:36px;color:#fff;"></i>
+          </div>
+          <h3>Video đã sẵn sàng!</h3>
+          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;justify-content:center;margin-top:1rem;">
+            <a id="downloadLink" href="#" download="video.webm" class="btn btn-success">
+              <i data-lucide="download" style="width:15px;height:15px;"></i>
+              Tải xuống
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-backdrop" id="settingsModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Cài đặt API</div>
+      <button class="btn btn-ghost btn-icon" id="closeSettingsBtn"><i data-lucide="x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div style="background:#1a1f2e;border:1px solid #2a3442;border-radius:8px;padding:12px;margin-bottom:16px;font-size:12px;color:#94a3b8;line-height:1.5;">
+        <i data-lucide="shield-check" style="width:14px;height:14px;color:#10b981;vertical-align:-2px;"></i>
+        <strong style="color:#10b981;">Bảo mật:</strong> API key chỉ lưu trên trình duyệt của bạn (localStorage), không gửi lên server lưu trữ. Mỗi lần gọi API, key được gửi qua header và dùng ngay tức thì.
+      </div>
+      <div class="form-group">
+        <label class="form-label">Gemini API Key</label>
+        <input type="password" id="geminiKeyInput" class="form-input" placeholder="AIza..." />
+      </div>
+      <div class="form-group">
+        <label class="form-label">ElevenLabs API Key (tùy chọn)</label>
+        <input type="password" id="elevenLabsKeyInput" class="form-input" placeholder="sk_..." />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary btn-full" id="saveSettingsBtn">Lưu cài đặt</button>
+    </div>
+  </div>
+</div>
+
+<script src="renderer.js"></script>
+<script src="app.js"></script>
+<script>lucide.createIcons();</script>
+</body>
+</html>
