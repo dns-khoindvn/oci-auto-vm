@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>IPA COMMAND CENTER V37</title>
+    <script src="https://unpkg.com/app-info-parser@1.1.4/dist/app-info-parser.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        :root { --bg: #0b0e14; --card: #161b22; --blue: #007aff; --green: #28cd41; --red: #da373c; --gray: #8b949e; }
+        body { background: var(--bg); color: #fff; font-family: -apple-system, system-ui, sans-serif; margin: 0; padding: 10px; line-height: 1.5; }
+        
+        /* HEADER */
+        .header-main { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: var(--card); border-radius: 15px; margin-bottom: 15px; border: 1px solid #30363d; position: sticky; top: 0; z-index: 99; }
+        
+        /* LAYOUT 3 TÀI KHOẢN */
+        .grid-layout { display: flex; flex-direction: column; gap: 20px; }
+        @media (min-width: 1024px) { .grid-layout { flex-direction: row; align-items: flex-start; } .account-block { flex: 1; } }
+
+        .account-block { background: var(--card); border-radius: 20px; border: 1px solid #30363d; padding-bottom: 15px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+        .acc-header { padding: 15px; background: rgba(255,255,255,0.03); border-bottom: 1px solid #30363d; }
+        .acc-name { font-size: 16px; font-weight: bold; color: var(--blue); }
+        
+        /* STORAGE BAR */
+        .storage-info { font-size: 11px; color: var(--gray); margin-top: 5px; display: flex; justify-content: space-between; }
+        .storage-bar { height: 6px; background: #333; border-radius: 3px; margin: 8px 0; overflow: hidden; }
+        .storage-fill { height: 100%; background: var(--green); width: 0%; transition: 0.8s ease-out; }
+
+        /* UPLOAD ZONE */
+        .drop-zone { border: 2px dashed #444; padding: 25px 15px; text-align: center; margin: 15px; border-radius: 12px; cursor: pointer; font-size: 13px; background: rgba(0,0,0,0.2); transition: 0.3s; }
+        .drop-zone:active { background: rgba(0,122,255,0.1); border-color: var(--blue); }
+        .p-bar { height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; margin-top: 10px; display: none; overflow: hidden; }
+        .p-fill { height: 100%; background: var(--blue); width: 0%; box-shadow: 0 0 10px var(--blue); transition: 0.2s; }
+
+        /* DANH SÁCH APP */
+        .app-list { padding: 0 15px; }
+        .app-item { background: #0d1117; padding: 15px; border-radius: 15px; margin-bottom: 12px; border: 1px solid #30363d; }
+        .app-top { display: flex; gap: 12px; margin-bottom: 10px; align-items: center; }
+        .app-icon { width: 55px; height: 55px; border-radius: 12px; object-fit: cover; border: 1px solid #333; background: #222; }
+        .app-info-main { flex: 1; }
+        .app-name-txt { font-size: 15px; font-weight: bold; color: #58a6ff; display: block; margin-bottom: 3px; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 10px; color: var(--gray); }
+        .info-full { font-size: 9px; color: #555; margin-top: 8px; border-top: 1px solid #222; padding-top: 5px; }
+        
+        .actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+        .btn-sm { padding: 10px 5px; font-size: 10px; border-radius: 8px; border: none; cursor: pointer; color: #fff; font-weight: bold; flex: 1; text-align: center; transition: 0.2s; }
+        .btn-sm:active { opacity: 0.7; transform: scale(0.95); }
+        
+        /* MODAL */
+        #edit-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .modal-content { background: var(--card); padding: 25px; border-radius: 20px; width: 100%; max-width: 400px; border: 1px solid #30363d; }
+        input, .btn-main { width: 100%; padding: 14px; margin: 8px 0; border-radius: 10px; border: 1px solid #30363d; background: #0d1117; color: #fff; box-sizing: border-box; font-size: 14px; }
+        .btn-main { background: var(--blue); font-weight: bold; cursor: pointer; border: none; margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen" style="max-width:350px; margin:20vh auto; padding:20px;">
+        <div class="account-block" style="padding:25px;">
+            <h2 style="text-align:center; margin-top:0;">IPA Master Hub</h2>
+            <input type="password" id="admin-pass" placeholder="Mật khẩu hệ thống">
+            <button class="btn-main" onclick="login()">Kích hoạt Dashboard</button>
+        </div>
+    </div>
+
+    <div id="dashboard" style="display:none;">
+        <div class="header-main">
+            <b style="font-size:18px;">COMMANDER V37</b>
+            <button onclick="logout()" style="background:none; border:1px solid var(--red); color:var(--red); padding:8px 15px; border-radius:10px; font-size:12px; font-weight:bold; cursor:pointer;">🚪 Thoát</button>
+        </div>
+        <div class="grid-layout" id="account-grid"></div>
+    </div>
+
+    <div id="edit-modal">
+        <div class="modal-content">
+            <h3 style="margin-top:0;">Sửa ứng dụng</h3>
+            <center>
+                <img id="edit-preview" style="width:75px; height:75px; border-radius:18px; border:2px solid #555; cursor:pointer;" onclick="document.getElementById('edit-icon-in').click()">
+                <input type="file" id="edit-icon-in" style="display:none" onchange="previewIcon(this)">
+                <div style="font-size:10px; color:var(--gray); margin:8px 0 15px;">Nhấn vào icon để đổi ảnh</div>
+            </center>
+            <input type="hidden" id="edit-id"><input type="hidden" id="edit-acc-idx">
+            <label style="font-size:11px;">Tên hiển thị:</label><input type="text" id="edit-name">
+            <label style="font-size:11px;">Tên file (.ipa):</label><input type="text" id="edit-filename">
+            <label style="font-size:11px;">Team Cert:</label><input type="text" id="edit-cert">
+            <button class="btn-main" onclick="saveEdit()">Lưu thay đổi</button>
+            <button class="btn-main" style="background:#333;" onclick="closeEdit()">Hủy bỏ</button>
+        </div>
+    </div>
+
+<script>
+    // --- 🟢 CẤU HÌNH LINK WORKER CỦA BẠN TẠI ĐÂY ---
+    const ACCOUNTS = [
+        { name: "TK 01", api: "https://dev.ipadl.workers.dev" },
+        { name: "TK 02", api: "https://dev.ipadl1.workers.dev" },
+        { name: "TK 03", api: "https://dev.ipadl2.workers.dev" }
+    ];
+
+    let PASS = localStorage.getItem("ipa_master_pass") || "";
+    if(PASS) showDashboard();
+
+    function login(){ 
+        PASS = document.getElementById('admin-pass').value; 
+        localStorage.setItem("ipa_master_pass", PASS); 
+        location.reload(); 
+    }
+    function logout(){ 
+        if(confirm("Bạn muốn đăng xuất?")){
+            localStorage.removeItem("ipa_master_pass"); 
+            location.reload(); 
+        }
+    }
+
+    function showDashboard(){
+        document.getElementById('login-screen').style.display='none';
+        document.getElementById('dashboard').style.display='block';
+        const grid = document.getElementById('account-grid');
+        ACCOUNTS.forEach((acc, idx) => {
+            grid.innerHTML += `
+                <div class="account-block">
+                    <div class="acc-header">
+                        <div class="acc-name">${acc.name}</div>
+                        <div class="storage-info">
+                            <span>Dung lượng đã dùng:</span>
+                            <b id="st-txt-${idx}">0 MB</b>
+                        </div>
+                        <div class="storage-bar"><div id="st-fill-${idx}" class="storage-fill"></div></div>
+                        <div style="font-size:9px; color:#555; text-align:right">Giới hạn: 10 GB</div>
+                    </div>
+                    <div class="drop-zone" onclick="document.getElementById('f-in-${idx}').click()">
+                        <b id="status-${idx}">➕ Tải IPA lên ${acc.name}</b>
+                        <input type="file" id="f-in-${idx}" style="display:none" accept=".ipa" onchange="upFile(this, ${idx})">
+                        <div class="p-bar" id="p-box-${idx}"><div class="p-fill" id="p-fill-${idx}"></div></div>
+                    </div>
+                    <div class="app-list" id="list-${idx}">Đang tải ứng dụng...</div>
+                </div>`;
+            loadData(idx);
+        });
+    }
+
+    async function loadData(idx){
+        const acc = ACCOUNTS[idx];
+        try {
+            const s = await(await fetch(`${acc.api}/storage`, {headers:{"Authorization":PASS}})).json();
+            const usedMB = (s.usedBytes/1024/1024).toFixed(1);
+            document.getElementById(`st-txt-${idx}`).innerText = usedMB + " MB";
+            document.getElementById(`st-fill-${idx}`).style.width = Math.min(100, (s.usedBytes / (10*1024*1024*1024)*100)) + "%";
+            
+            const apps = await(await fetch(`${acc.api}/list`, {headers:{"Authorization":PASS}})).json();
+            let h = "";
+            apps.sort((a,b)=>b.id-a.id).forEach(a=>{
+                h += `
+                <div class="app-item">
+                    <div class="app-top">
+                        <img src="${a.icon}" class="app-icon">
+                        <div class="app-info-main">
+                            <span class="app-name-txt">${a.name}</span>
+                            <div class="info-grid">
+                                <span>Ver: <b>${a.version}</b></span>
+                                <span>Size: <b>${a.size}</b></span>
+                                <span>iOS: <b>${a.minOs}+</b></span>
+                                <span>Cert: <b>${a.certName}</b></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="info-full">Exec: ${a.executable} | Build: ${a.build}</div>
+                    <div class="actions">
+                        <button class="btn-sm" style="background:#ff3b30" onclick="copy('${a.isgdLink}')">IS.GD</button>
+                        <button class="btn-sm" style="background:#28cd41" onclick="copy('${a.webLink}')">WEB</button>
+                        <button class="btn-sm" style="background:#007aff" onclick="window.open('${a.webLink}')">🔗 MỞ</button>
+                        <button class="btn-sm" style="background:#d29922" onclick="reup(${idx}, '${a.id}')">🔄 UP</button>
+                        <button class="btn-sm" style="background:#58a6ff" onclick='openEdit(${idx}, ${JSON.stringify(a).replace(/'/g,"&apos;")})'>🔧 SỬA</button>
+                        <button class="btn-sm" style="background:var(--red)" onclick="del(${idx}, '${a.id}')">🗑 XÓA</button>
+                    </div>
+                </div>`;
+            });
+            document.getElementById(`list-${idx}`).innerHTML = h || "Chưa có ứng dụng nào.";
+        } catch(e) { document.getElementById(`list-${idx}`).innerHTML = "⚠️ Lỗi kết nối tài khoản."; }
+    }
+
+    async function upFile(input, idx, appId=null){
+        const file = input.files[0];
+        if(!file) return;
+
+        const acc = ACCOUNTS[idx];
+        const status = document.getElementById(`status-${idx}`);
+        const pBox = document.getElementById(`p-box-${idx}`);
+        const pFill = document.getElementById(`p-fill-${idx}`);
+        
+        pBox.style.display = 'block';
+        status.innerText = "🔄 Đang khởi tạo...";
+
+        try {
+            const info = await (new AppInfoParser(file)).parse();
+            const zip = await JSZip.loadAsync(file);
+            const prov = Object.keys(zip.files).find(f=>f.endsWith(".app/embedded.mobileprovision"));
+            let team = "Enterprise"; 
+            if(prov){ 
+                const certContent = await zip.file(prov).async("string");
+                team = certContent.match(/<key>TeamName<\/key>\s*<string>([^<]+)<\/string>/)?.[1] || "Enterprise"; 
+            }
+
+            const id = appId || Date.now().toString();
+            const startReq = await fetch(`${acc.api}/upload/start`,{method:'POST',headers:{"Authorization":PASS},body:JSON.stringify({fileName:id+".ipa"})});
+            const start = await startReq.json();
+            
+            const chunkSize = 5 * 1024 * 1024;
+            const chunks = Math.ceil(file.size / chunkSize); 
+            const parts = [];
+
+            for(let i=0; i<chunks; i++){
+                const chunk = file.slice(i * chunkSize, (i+1) * chunkSize);
+                const res = await fetch(`${acc.api}/upload/part?uploadId=${start.uploadId}&partNumber=${i+1}&key=${start.key}`,{
+                    method:'POST',
+                    headers:{"Authorization":PASS},
+                    body:chunk
+                });
+                const partData = await res.json();
+                parts.push({partNumber:i+1, etag:partData.etag});
+                
+                let pc = Math.round((i+1)/chunks*100);
+                pFill.style.width = pc + "%";
+                status.innerText = `📤 Đang tải lên: ${pc}%`;
+            }
+
+            status.innerText = "⚙️ Đang xử lý metadata...";
+            await fetch(`${acc.api}/upload/complete`,{
+                method:'POST',
+                headers:{"Authorization":PASS},
+                body:JSON.stringify({
+                    uploadId:start.uploadId,
+                    key:start.key,
+                    parts,
+                    appData:{
+                        id,
+                        name:info.CFBundleDisplayName || info.CFBundleName,
+                        bundleId:info.CFBundleIdentifier,
+                        version:info.CFBundleShortVersionString,
+                        build:info.CFBundleVersion,
+                        executable:info.CFBundleExecutable,
+                        minOs:info.MinimumOSVersion,
+                        size:(file.size/1024/1024).toFixed(1)+" MB",
+                        icon:info.icon,
+                        certName:team
+                    }
+                })
+            });
+            
+            pBox.style.display='none';
+            status.innerText = "✅ Upload hoàn tất!";
+            input.value = ""; // FIX: RESET INPUT ĐỂ CÓ THỂ CHỌN LẠI FILE ĐÓ
+            setTimeout(() => { status.innerText = "➕ Tải IPA lên " + acc.name; }, 3000);
+            loadData(idx);
+        } catch(e) {
+            alert("Lỗi Upload: " + e.message);
+            status.innerText = "❌ Lỗi Upload!";
+            pBox.style.display='none';
+        }
+    }
+
+    let NEW_ICON = "";
+    function previewIcon(i){ 
+        const r=new FileReader(); 
+        r.onload=(e)=>{
+            NEW_ICON=e.target.result; 
+            document.getElementById('edit-preview').src=NEW_ICON;
+        }; 
+        r.readAsDataURL(i.files[0]); 
+    }
+
+    function openEdit(idx, a){
+        document.getElementById('edit-acc-idx').value = idx;
+        document.getElementById('edit-id').value = a.id;
+        document.getElementById('edit-name').value = a.name;
+        document.getElementById('edit-filename').value = a.fileName;
+        document.getElementById('edit-cert').value = a.certName;
+        document.getElementById('edit-preview').src = a.icon; 
+        NEW_ICON = "";
+        document.getElementById('edit-modal').style.display = 'flex';
+    }
+
+    function closeEdit(){ document.getElementById('edit-modal').style.display = 'none'; }
+
+    async function saveEdit(){
+        const idx = document.getElementById('edit-acc-idx').value;
+        const d = { 
+            id: document.getElementById('edit-id').value, 
+            name: document.getElementById('edit-name').value, 
+            newFileName: document.getElementById('edit-filename').value, 
+            certName: document.getElementById('edit-cert').value, 
+            newIcon: NEW_ICON 
+        };
+        await fetch(`${ACCOUNTS[idx].api}/upload/edit`, {
+            method:'POST', 
+            headers:{"Authorization":PASS,"Content-Type":"application/json"}, 
+            body:JSON.stringify(d)
+        });
+        location.reload();
+    }
+
+    function reup(idx, id){ 
+        const i=document.createElement('input'); 
+        i.type='file'; 
+        i.accept='.ipa'; 
+        i.onchange=(e)=>upFile(i, idx, id); 
+        i.click(); 
+    }
+
+    async function del(idx, id){ 
+        if(confirm("Xác nhận xóa ứng dụng này?")){ 
+            await fetch(`${ACCOUNTS[idx].api}/delete?id=${id}`,{method:'DELETE',headers:{"Authorization":PASS}}); 
+            loadData(idx); 
+        } 
+    }
+
+    function copy(t){ 
+        navigator.clipboard.writeText(t); 
+        alert("Đã copy liên kết!"); 
+    }
+</script>
+</body>
+</html>
