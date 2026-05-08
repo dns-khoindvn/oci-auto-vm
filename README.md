@@ -241,7 +241,7 @@ function generateV32View(app, host) {
 <html>
 <head>
 <meta charset="UTF-8">
-<title>IPA MASTER ADMIN V32</title>
+<title> Khơindvn </title>
 <script src="https://unpkg.com/app-info-parser@1.1.4/dist/app-info-parser.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
@@ -308,7 +308,7 @@ function generateV32View(app, host) {
         </div>
     </div>
 <script>
-    const API = "https://ipa-manager.ios-khoindvn.workers.dev"; // THAY LINK CỦA BẠN
+    const API = "https://vip.khoindvn.workers.dev"; // THAY LINK CỦA BẠN
     let PASS = localStorage.getItem("ipa_pass") || "";
     if(PASS){document.getElementById('login-screen').style.display='none';document.getElementById('dashboard').style.display='block';loadDashboard()}
     async function login(){
