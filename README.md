@@ -449,6 +449,6 @@ Phát hành theo [MIT License](https://opensource.org/licenses/MIT) — tự do 
 
 ## 👤 Tác giả
 
-*Phát triển bởi **Gemini AI** & **KhoiNDVN***
+*Phát triển bởi **KhoiNDVN***
 
 > Nếu thấy hữu ích, hãy ⭐ Star repo này để ủng hộ!
