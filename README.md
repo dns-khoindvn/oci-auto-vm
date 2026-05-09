@@ -245,119 +245,151 @@ function generateV32View(app, host) {
 
 > Lưu đoạn code dưới đây thành file `index.html` để dùng làm trang quản trị đa tài khoản.
 
-```html
-<!DOCTYPE html>
+```<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>IPA COMMAND CENTER V37</title>
+    <title>BẢNG QUẢN TRỊ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/app-info-parser@1.1.4/dist/app-info-parser.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
-        :root { --bg: #0b0e14; --card: #161b22; --blue: #007aff; --green: #28cd41; --red: #da373c; --gray: #8b949e; }
-        body { background: var(--bg); color: #fff; font-family: -apple-system, system-ui, sans-serif; margin: 0; padding: 10px; line-height: 1.5; }
+        :root { 
+            --bg: #050505; 
+            --card: rgba(20, 20, 25, 0.7); 
+            --accent: #007aff; 
+            --accent-glow: rgba(0, 122, 255, 0.4);
+            --success: #32d74b; 
+            --danger: #ff453a; 
+            --text: #ffffff; 
+            --text-sec: #a1a1a6;
+            --glass: blur(30px) saturate(180%);
+            --border: rgba(255, 255, 255, 0.08);
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(0, 122, 255, 0.15) 0%, transparent 30%),
+                radial-gradient(circle at 100% 100%, rgba(0, 122, 255, 0.1) 0%, transparent 30%);
+            color: var(--text); font-family: 'Outfit', -apple-system, sans-serif; margin: 0; padding: 20px; min-height: 100vh;
+            background-attachment: fixed;
+        }
         
-        /* HEADER */
-        .header-main { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: var(--card); border-radius: 15px; margin-bottom: 15px; border: 1px solid #30363d; position: sticky; top: 0; z-index: 99; }
+        .glass { background: var(--card); backdrop-filter: var(--glass); -webkit-backdrop-filter: var(--glass); border: 1px solid var(--border); border-radius: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
         
-        /* LAYOUT 3 TÀI KHOẢN */
-        .grid-layout { display: flex; flex-direction: column; gap: 20px; }
-        @media (min-width: 1024px) { .grid-layout { flex-direction: row; align-items: flex-start; } .account-block { flex: 1; } }
+        /* Login Screen */
+        #login-screen { max-width: 420px; margin: 12vh auto; padding: 50px 40px; text-align: center; }
+        .login-logo { font-size: 50px; font-weight: 800; letter-spacing: -3px; margin-bottom: 5px; background: linear-gradient(to bottom, #fff, #888); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        /* Dashboard */
+        .header-main { display: flex; justify-content: space-between; align-items: center; padding: 20px 35px; margin-bottom: 30px; position: sticky; top: 15px; z-index: 1000; }
+        .logo-txt { font-size: 22px; font-weight: 800; letter-spacing: -1px; }
+        
+        .grid-layout { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 25px; }
+        
+        .acc-block { transition: transform 0.3s; }
+        .acc-block:hover { transform: translateY(-5px); }
+        .acc-h { padding: 30px; border-bottom: 1px solid var(--border); }
+        .acc-n { font-size: 18px; font-weight: 700; color: var(--accent); margin-bottom: 15px; letter-spacing: 0.5px; }
+        
+        .st-b { height: 6px; background: rgba(255,255,255,0.05); border-radius: 10px; margin-bottom: 10px; overflow: hidden; }
+        .st-f { height: 100%; background: linear-gradient(90deg, #007aff, #5ac8fa); width: 0%; transition: 1.5s cubic-bezier(0.2, 0, 0.2, 1); box-shadow: 0 0 15px var(--accent-glow); }
+        
+        .search-container { padding: 20px 30px 0; }
+        .search-input { width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 15px; padding: 12px 18px; color: #fff; outline: none; transition: 0.3s; }
+        .search-input:focus { border-color: var(--accent); background: rgba(255,255,255,0.06); }
+        
+        .up-z { 
+            margin: 20px 30px; border: 1px dashed rgba(255,255,255,0.15); border-radius: 25px; padding: 40px 15px; text-align: center; cursor: pointer; transition: 0.3s; background: rgba(255,255,255,0.01); 
+        }
+        .up-z:hover { background: rgba(0, 122, 255, 0.05); border-color: var(--accent); }
+        
+        .app-list { padding: 0 30px 25px; max-height: 600px; overflow-y: auto; }
+        .app-item { background: rgba(255,255,255,0.02); border-radius: 25px; padding: 20px; border: 1px solid var(--border); margin-bottom: 15px; transition: 0.2s; }
+        .app-item:hover { border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.04); }
+        .app-icon { width: 70px; height: 70px; border-radius: 18px; object-fit: cover; box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
+        
+        .acts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 20px; }
+        .btn-sm { padding: 12px 4px; font-size: 9px; font-weight: 700; border-radius: 12px; border: none; cursor: pointer; color: #fff; text-align: center; transition: 0.2s; text-transform: uppercase; }
+        .btn-sm:active { transform: scale(0.95); }
+        
+        input, .btn-main { width: 100%; padding: 16px; border-radius: 18px; border: 1px solid var(--border); background: rgba(255,255,255,0.05); color: #fff; margin-top: 12px; outline: none; font-size: 15px; transition: 0.3s; }
+        .btn-main { background: var(--accent); border: none; font-weight: 800; cursor: pointer; margin-top: 25px; box-shadow: 0 10px 30px var(--accent-glow); }
+        .btn-main:hover { transform: translateY(-2px); box-shadow: 0 15px 35px var(--accent-glow); opacity: 0.9; }
 
-        .account-block { background: var(--card); border-radius: 20px; border: 1px solid #30363d; padding-bottom: 15px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
-        .acc-header { padding: 15px; background: rgba(255,255,255,0.03); border-bottom: 1px solid #30363d; }
-        .acc-name { font-size: 16px; font-weight: bold; color: var(--blue); }
+        #edit-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(20px); align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
         
-        /* STORAGE BAR */
-        .storage-info { font-size: 11px; color: var(--gray); margin-top: 5px; display: flex; justify-content: space-between; }
-        .storage-bar { height: 6px; background: #333; border-radius: 3px; margin: 8px 0; overflow: hidden; }
-        .storage-fill { height: 100%; background: var(--green); width: 0%; transition: 0.8s ease-out; }
-
-        /* UPLOAD ZONE */
-        .drop-zone { border: 2px dashed #444; padding: 25px 15px; text-align: center; margin: 15px; border-radius: 12px; cursor: pointer; font-size: 13px; background: rgba(0,0,0,0.2); transition: 0.3s; }
-        .drop-zone:active { background: rgba(0,122,255,0.1); border-color: var(--blue); }
-        .p-bar { height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; margin-top: 10px; display: none; overflow: hidden; }
-        .p-fill { height: 100%; background: var(--blue); width: 0%; box-shadow: 0 0 10px var(--blue); transition: 0.2s; }
-
-        /* DANH SÁCH APP */
-        .app-list { padding: 0 15px; }
-        .app-item { background: #0d1117; padding: 15px; border-radius: 15px; margin-bottom: 12px; border: 1px solid #30363d; }
-        .app-top { display: flex; gap: 12px; margin-bottom: 10px; align-items: center; }
-        .app-icon { width: 55px; height: 55px; border-radius: 12px; object-fit: cover; border: 1px solid #333; background: #222; }
-        .app-info-main { flex: 1; }
-        .app-name-txt { font-size: 15px; font-weight: bold; color: #58a6ff; display: block; margin-bottom: 3px; }
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 10px; color: var(--gray); }
-        .info-full { font-size: 9px; color: #555; margin-top: 8px; border-top: 1px solid #222; padding-top: 5px; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        .animate { animation: slideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) backwards; }
         
-        .actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-        .btn-sm { padding: 10px 5px; font-size: 10px; border-radius: 8px; border: none; cursor: pointer; color: #fff; font-weight: bold; flex: 1; text-align: center; transition: 0.2s; }
-        .btn-sm:active { opacity: 0.7; transform: scale(0.95); }
-        
-        /* MODAL */
-        #edit-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-        .modal-content { background: var(--card); padding: 25px; border-radius: 20px; width: 100%; max-width: 400px; border: 1px solid #30363d; }
-        input, .btn-main { width: 100%; padding: 14px; margin: 8px 0; border-radius: 10px; border: 1px solid #30363d; background: #0d1117; color: #fff; box-sizing: border-box; font-size: 14px; }
-        .btn-main { background: var(--blue); font-weight: bold; cursor: pointer; border: none; margin-top: 15px; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
     </style>
 </head>
 <body>
 
-    <div id="login-screen" style="max-width:350px; margin:20vh auto; padding:20px;">
-        <div class="account-block" style="padding:25px;">
-            <h2 style="text-align:center; margin-top:0;">IPA Master Hub</h2>
-            <input type="password" id="admin-pass" placeholder="Mật khẩu hệ thống">
-            <button class="btn-main" onclick="login()">Kích hoạt Dashboard</button>
-        </div>
+    <!-- TRANG LOGIN -->
+    <div id="login-screen" class="glass animate">
+        <div class="login-logo">ADMIN</div>
+        <p style="color:var(--text-sec); font-size:11px; margin-bottom:40px; font-weight:600; letter-spacing:4px; text-transform:uppercase;">IPA Commander Pro V38</p>
+        <input type="password" id="admin-pass" placeholder="MẬT MÃ QUẢN TRỊ" onkeypress="if(event.key==='Enter') login()">
+        <button class="btn-main" onclick="login()">TRUY CẬP HỆ THỐNG</button>
     </div>
 
+    <!-- TRANG DASHBOARD -->
     <div id="dashboard" style="display:none;">
-        <div class="header-main">
-            <b style="font-size:18px;">COMMANDER V37</b>
-            <button onclick="logout()" style="background:none; border:1px solid var(--red); color:var(--red); padding:8px 15px; border-radius:10px; font-size:12px; font-weight:bold; cursor:pointer;">🚪 Thoát</button>
+        <div class="header-main glass animate">
+            <div class="logo-txt">BẢNG ĐIỀU KHIỂN</div>
+            <div style="display:flex; gap:12px;">
+                <button onclick="clean()" style="background:rgba(255,255,255,0.06); border:1px solid var(--border); color:#a1a1a6; padding:10px 20px; border-radius:15px; font-size:11px; font-weight:700; cursor:pointer; transition:0.3s;">DỌN RÁC R2</button>
+                <button onclick="logout()" style="background:var(--danger); border:none; color:#fff; padding:10px 20px; border-radius:15px; font-size:11px; font-weight:700; cursor:pointer; transition:0.3s;">ĐĂNG XUẤT</button>
+            </div>
         </div>
         <div class="grid-layout" id="account-grid"></div>
     </div>
 
+    <!-- MODAL SỬA -->
     <div id="edit-modal">
-        <div class="modal-content">
-            <h3 style="margin-top:0;">Sửa ứng dụng</h3>
+        <div class="glass animate" style="width:100%; max-width:440px; padding:40px; text-align:center;">
+            <h3 style="margin:0 0 25px; font-size:22px; font-weight:800;">CHỈNH SỬA</h3>
             <center>
-                <img id="edit-preview" style="width:75px; height:75px; border-radius:18px; border:2px solid #555; cursor:pointer;" onclick="document.getElementById('edit-icon-in').click()">
+                <div style="position:relative; width:110px; height:110px; margin-bottom:25px;">
+                    <img id="edit-preview" style="width:100%; height:100%; border-radius:24px; border:2px solid var(--accent); object-fit:cover; cursor:pointer;" onclick="document.getElementById('edit-icon-in').click()">
+                    <div style="position:absolute; bottom:-5px; right:-5px; background:var(--accent); color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px;">✎</div>
+                </div>
                 <input type="file" id="edit-icon-in" style="display:none" onchange="previewIcon(this)">
-                <div style="font-size:10px; color:var(--gray); margin:8px 0 15px;">Nhấn vào icon để đổi ảnh</div>
             </center>
             <input type="hidden" id="edit-id"><input type="hidden" id="edit-acc-idx">
-            <label style="font-size:11px;">Tên hiển thị:</label><input type="text" id="edit-name">
-            <label style="font-size:11px;">Tên file (.ipa):</label><input type="text" id="edit-filename">
-            <label style="font-size:11px;">Team Cert:</label><input type="text" id="edit-cert">
-            <button class="btn-main" onclick="saveEdit()">Lưu thay đổi</button>
-            <button class="btn-main" style="background:#333;" onclick="closeEdit()">Hủy bỏ</button>
+            <input type="text" id="edit-name" placeholder="Tên hiển thị">
+            <input type="text" id="edit-filename" placeholder="Tên file gốc">
+            <input type="text" id="edit-cert" placeholder="Chứng chỉ app">
+            <button class="btn-main" onclick="saveEdit()">CẬP NHẬT DỮ LIỆU</button>
+            <button class="btn-main" style="background:rgba(255,255,255,0.06); margin-top:10px; box-shadow:none;" onclick="closeEdit()">ĐÓNG</button>
         </div>
     </div>
 
 <script>
-    // --- 🟢 CẤU HÌNH LINK WORKER CỦA BẠN TẠI ĐÂY ---
-    const ACCOUNTS = [
-        { name: "KhoiND - TK 01", api: "https://worker-1.ios-khoindvn.workers.dev" },
-        { name: "KhoiND - TK 02", api: "https://worker-2.ios-khoindvn.workers.dev" },
-        { name: "KhoiND - TK 03", api: "https://worker-3.ios-khoindvn.workers.dev" }
+// --- DANH SÁCH MÁY CHỦ ĐÃ CẬP NHẬT ---
+const ACCOUNTS = [
+        { name: "Tài khoản 01", api: "https://dev.ipadl.workers.dev" },
+        { name: "Tài khoản 02", api: "https://dev.ipadl1.workers.dev" },
+        { name: "Tài khoản 03", api: "https://dev.ipadl2.workers.dev" }
     ];
+
 
     let PASS = localStorage.getItem("ipa_master_pass") || "";
     if(PASS) showDashboard();
 
     function login(){ 
-        PASS = document.getElementById('admin-pass').value; 
-        localStorage.setItem("ipa_master_pass", PASS); 
+        const val = document.getElementById('admin-pass').value;
+        if(!val) return;
+        localStorage.setItem("ipa_master_pass", val); 
         location.reload(); 
     }
-    function logout(){ 
-        if(confirm("Bạn muốn đăng xuất?")){
-            localStorage.removeItem("ipa_master_pass"); 
-            location.reload(); 
-        }
-    }
+    function logout(){ if(confirm("Bạn muốn đăng xuất?")){ localStorage.removeItem("ipa_master_pass"); location.reload(); } }
 
     function showDashboard(){
         document.getElementById('login-screen').style.display='none';
@@ -365,22 +397,22 @@ function generateV32View(app, host) {
         const grid = document.getElementById('account-grid');
         ACCOUNTS.forEach((acc, idx) => {
             grid.innerHTML += `
-                <div class="account-block">
-                    <div class="acc-header">
-                        <div class="acc-name">${acc.name}</div>
-                        <div class="storage-info">
-                            <span>Dung lượng đã dùng:</span>
-                            <b id="st-txt-${idx}">0 MB</b>
+                <div class="glass acc-block animate" style="animation-delay: ${idx*0.1}s">
+                    <div class="acc-h">
+                        <div class="acc-n">${acc.name}</div>
+                        <div class="st-b"><div id="st-fill-${idx}" class="st-f"></div></div>
+                        <div style="font-size:10px; color:var(--text-sec); display:flex; justify-content:space-between; font-weight:700; text-transform:uppercase;">
+                            <span id="st-txt-${idx}">ĐANG TẢI...</span>
+                            <span>GIỚI HẠN: 10 GB</span>
                         </div>
-                        <div class="storage-bar"><div id="st-fill-${idx}" class="storage-fill"></div></div>
-                        <div style="font-size:9px; color:#555; text-align:right">Giới hạn: 10 GB</div>
                     </div>
-                    <div class="drop-zone" onclick="document.getElementById('f-in-${idx}').click()">
-                        <b id="status-${idx}">➕ Tải IPA lên ${acc.name}</b>
+                    <div class="search-container"><input type="text" class="search-input" placeholder="TÌM KIẾM ỨNG DỤNG..." oninput="searchApps(${idx}, this.value)"></div>
+                    <div class="up-z" onclick="document.getElementById('f-in-${idx}').click()">
+                        <b id="status-${idx}" style="font-size:14px; letter-spacing:1px;">📤 TẢI LÊN IPA</b>
                         <input type="file" id="f-in-${idx}" style="display:none" accept=".ipa" onchange="upFile(this, ${idx})">
-                        <div class="p-bar" id="p-box-${idx}"><div class="p-fill" id="p-fill-${idx}"></div></div>
+                        <div class="p-box" style="height:4px; background:rgba(255,255,255,0.05); border-radius:10px; margin-top:20px; display:none; overflow:hidden;" id="p-box-${idx}"><div style="height:100%; background:var(--accent); width:0%;" id="p-fill-${idx}"></div></div>
                     </div>
-                    <div class="app-list" id="list-${idx}">Đang tải ứng dụng...</div>
+                    <div class="app-list" id="list-${idx}"></div>
                 </div>`;
             loadData(idx);
         });
@@ -391,183 +423,91 @@ function generateV32View(app, host) {
         try {
             const s = await(await fetch(`${acc.api}/storage`, {headers:{"Authorization":PASS}})).json();
             const usedMB = (s.usedBytes/1024/1024).toFixed(1);
-            document.getElementById(`st-txt-${idx}`).innerText = usedMB + " MB";
+            document.getElementById(`st-txt-${idx}`).innerText = usedMB + " MB ĐÃ DÙNG";
             document.getElementById(`st-fill-${idx}`).style.width = Math.min(100, (s.usedBytes / (10*1024*1024*1024)*100)) + "%";
-            
             const apps = await(await fetch(`${acc.api}/list`, {headers:{"Authorization":PASS}})).json();
-            let h = "";
-            apps.sort((a,b)=>b.id-a.id).forEach(a=>{
-                h += `
-                <div class="app-item">
-                    <div class="app-top">
-                        <img src="${a.icon}" class="app-icon">
-                        <div class="app-info-main">
-                            <span class="app-name-txt">${a.name}</span>
-                            <div class="info-grid">
-                                <span>Ver: <b>${a.version}</b></span>
-                                <span>Size: <b>${a.size}</b></span>
-                                <span>iOS: <b>${a.minOs}+</b></span>
-                                <span>Cert: <b>${a.certName}</b></span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="info-full">Exec: ${a.executable} | Build: ${a.build}</div>
-                    <div class="actions">
-                        <button class="btn-sm" style="background:#ff3b30" onclick="copy('${a.isgdLink}')">IS.GD</button>
-                        <button class="btn-sm" style="background:#28cd41" onclick="copy('${a.webLink}')">WEB</button>
-                        <button class="btn-sm" style="background:#007aff" onclick="window.open('${a.webLink}')">🔗 MỞ</button>
-                        <button class="btn-sm" style="background:#d29922" onclick="reup(${idx}, '${a.id}')">🔄 UP</button>
-                        <button class="btn-sm" style="background:#58a6ff" onclick='openEdit(${idx}, ${JSON.stringify(a).replace(/'/g,"&apos;")})'>🔧 SỬA</button>
-                        <button class="btn-sm" style="background:var(--red)" onclick="del(${idx}, '${a.id}')">🗑 XÓA</button>
-                    </div>
-                </div>`;
-            });
-            document.getElementById(`list-${idx}`).innerHTML = h || "Chưa có ứng dụng nào.";
-        } catch(e) { document.getElementById(`list-${idx}`).innerHTML = "⚠️ Lỗi kết nối tài khoản."; }
+            window[`data_${idx}`] = apps.sort((a,b)=>b.id-a.id);
+            renderApps(idx);
+        } catch(e) { document.getElementById(`list-${idx}`).innerHTML = "<div style='color:var(--danger); text-align:center; padding:40px; font-size:12px; font-weight:700;'>⚠️ LỖI KẾT NỐI SERVER</div>"; }
     }
 
-    async function upFile(input, idx, appId=null){
-        const file = input.files[0];
-        if(!file) return;
+    function renderApps(idx, q = "") {
+        const list = document.getElementById(`list-${idx}`);
+        let apps = window[`data_${idx}`] || [];
+        if (q) apps = apps.filter(a => a.name.toLowerCase().includes(q.toLowerCase()));
+        let h = "";
+        apps.forEach(a => {
+            h += `
+            <div class="app-item">
+                <div style="display:flex; gap:18px; align-items:center;">
+                    <img src="${a.icon}" class="app-icon">
+                    <div style="flex:1; overflow:hidden;">
+                        <div style="font-weight:800; color:#fff; font-size:16px; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${a.name}</div>
+                        <div style="font-size:10px; color:var(--text-sec); font-weight:700; text-transform:uppercase;">${a.version} • ${a.size} • ${a.certName}</div>
+                    </div>
+                </div>
+                <div class="acts">
+                    <button class="btn-sm" style="background:rgba(255,255,255,0.08)" onclick="copy('${a.isgdLink}')">Link Rút Gọn</button>
+                    <button class="btn-sm" style="background:var(--success)" onclick="copy('${a.webLink}')">Copy Link</button>
+                    <button class="btn-sm" style="background:var(--accent)" onclick="window.open('${a.webLink}')">Xem</button>
+                    <button class="btn-sm" style="background:#555" onclick="reup(${idx}, '${a.id}')">Update</button>
+                    <button class="btn-sm" style="background:#444" onclick='openEdit(${idx}, ${JSON.stringify(a).replace(/'/g,"&apos;")})'>Sửa</button>
+                    <button class="btn-sm" style="background:var(--danger)" onclick="del(${idx}, '${a.id}')">Xóa</button>
+                </div>
+            </div>`;
+        });
+        list.innerHTML = h || "<div style='color:var(--text-sec); text-align:center; padding:30px; font-size:12px;'>TRỐNG</div>";
+    }
 
+    function searchApps(idx, val) { renderApps(idx, val); }
+
+    async function upFile(input, idx, appId=null){
+        const file = input.files[0]; if(!file) return;
         const acc = ACCOUNTS[idx];
         const status = document.getElementById(`status-${idx}`);
         const pBox = document.getElementById(`p-box-${idx}`);
         const pFill = document.getElementById(`p-fill-${idx}`);
-        
-        pBox.style.display = 'block';
-        status.innerText = "🔄 Đang khởi tạo...";
-
+        pBox.style.display = 'block'; status.innerText = "⚡ ĐANG XỬ LÝ...";
         try {
             const info = await (new AppInfoParser(file)).parse();
             const zip = await JSZip.loadAsync(file);
             const prov = Object.keys(zip.files).find(f=>f.endsWith(".app/embedded.mobileprovision"));
             let team = "Enterprise"; 
-            if(prov){ 
-                const certContent = await zip.file(prov).async("string");
-                team = certContent.match(/<key>TeamName<\/key>\s*<string>([^<]+)<\/string>/)?.[1] || "Enterprise"; 
-            }
-
+            if(prov){ const content = await zip.file(prov).async("string"); team = content.match(/<key>TeamName<\/key>\s*<string>([^<]+)<\/string>/)?.[1] || "Enterprise"; }
             const id = appId || Date.now().toString();
             const startReq = await fetch(`${acc.api}/upload/start`,{method:'POST',headers:{"Authorization":PASS},body:JSON.stringify({fileName:id+".ipa"})});
             const start = await startReq.json();
-            
-            const chunkSize = 5 * 1024 * 1024;
-            const chunks = Math.ceil(file.size / chunkSize); 
-            const parts = [];
-
+            const chunkSize = 5 * 1024 * 1024; const chunks = Math.ceil(file.size / chunkSize); const parts = [];
             for(let i=0; i<chunks; i++){
                 const chunk = file.slice(i * chunkSize, (i+1) * chunkSize);
-                const res = await fetch(`${acc.api}/upload/part?uploadId=${start.uploadId}&partNumber=${i+1}&key=${start.key}`,{
-                    method:'POST',
-                    headers:{"Authorization":PASS},
-                    body:chunk
-                });
-                const partData = await res.json();
-                parts.push({partNumber:i+1, etag:partData.etag});
-                
-                let pc = Math.round((i+1)/chunks*100);
-                pFill.style.width = pc + "%";
-                status.innerText = `📤 Đang tải lên: ${pc}%`;
+                const res = await fetch(`${acc.api}/upload/part?uploadId=${start.uploadId}&partNumber=${i+1}&key=${start.key}`,{method:'POST', headers:{"Authorization":PASS}, body:chunk});
+                const d = await res.json(); parts.push({partNumber:i+1, etag:d.etag});
+                pFill.style.width = Math.round((i+1)/chunks*100) + "%";
+                status.innerText = `📤 TẢI LÊN: ${Math.round((i+1)/chunks*100)}%`;
             }
-
-            status.innerText = "⚙️ Đang xử lý metadata...";
-            await fetch(`${acc.api}/upload/complete`,{
-                method:'POST',
-                headers:{"Authorization":PASS},
-                body:JSON.stringify({
-                    uploadId:start.uploadId,
-                    key:start.key,
-                    parts,
-                    appData:{
-                        id,
-                        name:info.CFBundleDisplayName || info.CFBundleName,
-                        bundleId:info.CFBundleIdentifier,
-                        version:info.CFBundleShortVersionString,
-                        build:info.CFBundleVersion,
-                        executable:info.CFBundleExecutable,
-                        minOs:info.MinimumOSVersion,
-                        size:(file.size/1024/1024).toFixed(1)+" MB",
-                        icon:info.icon,
-                        certName:team
-                    }
-                })
-            });
-            
-            pBox.style.display='none';
-            status.innerText = "✅ Upload hoàn tất!";
-            input.value = ""; // FIX: RESET INPUT ĐỂ CÓ THỂ CHỌN LẠI FILE ĐÓ
-            setTimeout(() => { status.innerText = "➕ Tải IPA lên " + acc.name; }, 3000);
-            loadData(idx);
-        } catch(e) {
-            alert("Lỗi Upload: " + e.message);
-            status.innerText = "❌ Lỗi Upload!";
-            pBox.style.display='none';
-        }
+            await fetch(`${acc.api}/upload/complete`,{method:'POST', headers:{"Authorization":PASS}, body:JSON.stringify({uploadId:start.uploadId, key:start.key, parts, appData:{id, name:info.CFBundleDisplayName || info.CFBundleName, bundleId:info.CFBundleIdentifier, version:info.CFBundleShortVersionString, build:info.CFBundleVersion, executable:info.CFBundleExecutable, minOs:info.MinimumOSVersion, size:(file.size/1024/1024).toFixed(1)+" MB", icon:info.icon, certName:team}})});
+            pBox.style.display='none'; status.innerText = "✅ XONG!"; input.value = "";
+            setTimeout(() => { status.innerText = "📤 TẢI LÊN IPA"; }, 3000); loadData(idx);
+        } catch(e) { alert("Lỗi: " + e.message); status.innerText = "❌ LỖI!"; pBox.style.display='none'; }
     }
 
-    let NEW_ICON = "";
-    function previewIcon(i){ 
-        const r=new FileReader(); 
-        r.onload=(e)=>{
-            NEW_ICON=e.target.result; 
-            document.getElementById('edit-preview').src=NEW_ICON;
-        }; 
-        r.readAsDataURL(i.files[0]); 
-    }
-
-    function openEdit(idx, a){
-        document.getElementById('edit-acc-idx').value = idx;
-        document.getElementById('edit-id').value = a.id;
-        document.getElementById('edit-name').value = a.name;
-        document.getElementById('edit-filename').value = a.fileName;
-        document.getElementById('edit-cert').value = a.certName;
-        document.getElementById('edit-preview').src = a.icon; 
-        NEW_ICON = "";
-        document.getElementById('edit-modal').style.display = 'flex';
-    }
-
+    function previewIcon(i){ const r=new FileReader(); r.onload=(e)=>document.getElementById('edit-preview').src=e.target.result; r.readAsDataURL(i.files[0]); }
+    function openEdit(idx, a){ document.getElementById('edit-acc-idx').value = idx; document.getElementById('edit-id').value = a.id; document.getElementById('edit-name').value = a.name; document.getElementById('edit-filename').value = a.fileName; document.getElementById('edit-cert').value = a.certName; document.getElementById('edit-preview').src = a.icon; document.getElementById('edit-modal').style.display = 'flex'; }
     function closeEdit(){ document.getElementById('edit-modal').style.display = 'none'; }
-
     async function saveEdit(){
         const idx = document.getElementById('edit-acc-idx').value;
-        const d = { 
-            id: document.getElementById('edit-id').value, 
-            name: document.getElementById('edit-name').value, 
-            newFileName: document.getElementById('edit-filename').value, 
-            certName: document.getElementById('edit-cert').value, 
-            newIcon: NEW_ICON 
-        };
-        await fetch(`${ACCOUNTS[idx].api}/upload/edit`, {
-            method:'POST', 
-            headers:{"Authorization":PASS,"Content-Type":"application/json"}, 
-            body:JSON.stringify(d)
-        });
+        const body = { id: document.getElementById('edit-id').value, name: document.getElementById('edit-name').value, newFileName: document.getElementById('edit-filename').value, certName: document.getElementById('edit-cert').value, newIcon: document.getElementById('edit-preview').src.startsWith('data:') ? document.getElementById('edit-preview').src : "" };
+        await fetch(`${ACCOUNTS[idx].api}/upload/edit`, { method:'POST', headers:{"Authorization":PASS,"Content-Type":"application/json"}, body:JSON.stringify(body) });
         location.reload();
     }
-
-    function reup(idx, id){ 
-        const i=document.createElement('input'); 
-        i.type='file'; 
-        i.accept='.ipa'; 
-        i.onchange=(e)=>upFile(i, idx, id); 
-        i.click(); 
-    }
-
-    async function del(idx, id){ 
-        if(confirm("Xác nhận xóa ứng dụng này?")){ 
-            await fetch(`${ACCOUNTS[idx].api}/delete?id=${id}`,{method:'DELETE',headers:{"Authorization":PASS}}); 
-            loadData(idx); 
-        } 
-    }
-
-    function copy(t){ 
-        navigator.clipboard.writeText(t); 
-        alert("Đã copy liên kết!"); 
-    }
+    async function clean() { if(confirm("Dọn sạch các tệp rác trên R2?")) { for(let i=0; i<ACCOUNTS.length; i++) await fetch(`${ACCOUNTS[i].api}/cleanup`, {headers:{"Authorization":PASS}}); alert("ĐÃ DỌN DẸP!"); location.reload(); } }
+    function reup(idx, id){ const i=document.createElement('input'); i.type='file'; i.accept='.ipa'; i.onchange=(e)=>upFile(i, idx, id); i.click(); }
+    async function del(idx, id){ if(confirm("Bạn có chắc chắn muốn xóa vĩnh viễn app này?")){ await fetch(`${ACCOUNTS[idx].api}/delete?id=${id}`,{method:'DELETE',headers:{"Authorization":PASS}}); loadData(idx); } }
+    function copy(t){ navigator.clipboard.writeText(t); alert("ĐÃ SAO CHÉP!"); }
 </script>
 </body>
 </html>
+
 ```
 
 ---
