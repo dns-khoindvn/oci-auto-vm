@@ -1,4 +1,4 @@
-# 📦 IPA Master V37 - Ultimate OTA Manager
+# OTA Manager
 
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Version](https://img.shields.io/badge/Version-37.0-green.svg)
@@ -107,9 +107,16 @@ ipa-master-v37/
 > Copy đoạn code dưới đây dán vào Cloudflare Worker của bạn.
 
 ```javascript
+/**
+ * IPA Master V38 - BẢN CLEAN PREMIUM (KHÔNG QUẢNG CÁO)
+ * - Đầy đủ thông tin chi tiết (Build, Executable, Cert...)
+ * - Giao diện Premium Luxury
+ * - Đếm lượt tải thực tế (Real-time)
+ */
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS, PUT",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
 };
 
@@ -118,15 +125,34 @@ export default {
     const url = new URL(request.url);
     const host = env.WEB_DOMAIN ? "https://" + env.WEB_DOMAIN : url.origin;
     const authPass = env.ACCESS_PASSWORD;
+
     if (request.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+    // ROUTE: Giao diện người dùng
     if (url.pathname.startsWith("/v/")) {
       const id = url.pathname.split("/v/")[1];
       const meta = await (await env.MY_BUCKET.get(`meta/${id}.json`))?.json();
-      if (!meta) return new Response("404 Not Found", { status: 404 });
-      return new Response(generateV32View(meta, host), { headers: { "Content-Type": "text/html; charset=utf-8", ...corsHeaders } });
+      if (!meta) return new Response("404 Not Found", { status: 404, headers: corsHeaders });
+      return new Response(generateV32View(meta, host), { 
+        headers: { "Content-Type": "text/html; charset=utf-8", ...corsHeaders } 
+      });
     }
 
+    // ROUTE: Xử lý đếm lượt tải và Redirect cài đặt
+    if (url.pathname.startsWith("/i/")) {
+      const id = url.pathname.split("/i/")[1];
+      try {
+        const metaFile = await env.MY_BUCKET.get(`meta/${id}.json`);
+        if (metaFile) {
+          let meta = await metaFile.json();
+          meta.downloads = (meta.downloads || 0) + 1;
+          await env.MY_BUCKET.put(`meta/${id}.json`, JSON.stringify(meta));
+        }
+      } catch (e) {}
+      return Response.redirect(`itms-services://?action=download-manifest&url=${host}/p/${id}.plist`, 302);
+    }
+
+    // Các Route hệ thống (Plist, File, Login, Storage, Admin Tasks...)
     if (url.pathname.startsWith("/p/")) {
       const id = url.pathname.split(".plist")[0].split("/p/")[1];
       const meta = await (await env.MY_BUCKET.get(`meta/${id}.json`))?.json();
@@ -136,13 +162,8 @@ export default {
     if (url.pathname.startsWith("/f/")) {
       const fileName = url.pathname.split("/f/")[1];
       const file = await env.MY_BUCKET.get(`files/${fileName}`);
-      if (!file) return new Response("Not Found", { status: 404 });
+      if (!file) return new Response("Not Found", { status: 404, headers: corsHeaders });
       return new Response(file.body, { headers: { "Content-Type": "application/octet-stream", ...corsHeaders } });
-    }
-
-    if (url.pathname.startsWith("/i/")) {
-      const id = url.pathname.split("/i/")[1];
-      return Response.redirect(`itms-services://?action=download-manifest&url=${host}/p/${id}.plist`, 302);
     }
 
     if (url.pathname === "/login") {
@@ -151,13 +172,23 @@ export default {
     }
 
     if (url.pathname === "/storage") {
-      let total = 0; const list = await env.MY_BUCKET.list();
-      for (let obj of list.objects) total += obj.size;
-      return new Response(JSON.stringify({ usedBytes: total }), { headers: corsHeaders });
+      try {
+        let total = 0; const list = await env.MY_BUCKET.list();
+        for (let obj of list.objects) total += obj.size;
+        return new Response(JSON.stringify({ usedBytes: total }), { headers: corsHeaders });
+      } catch (e) { return new Response(JSON.stringify({ usedBytes: 0 }), { headers: corsHeaders }); }
     }
 
     const auth = request.headers.get("Authorization");
     if (auth !== authPass) return new Response("Unauthorized", { status: 401, headers: corsHeaders });
+
+    // Admin Routes: List/Upload/Edit/Delete
+    if (url.pathname === "/list") {
+      const list = await env.MY_BUCKET.list({ prefix: "meta/" });
+      const apps = [];
+      for (const o of list.objects) { apps.push(await (await env.MY_BUCKET.get(o.key)).json()); }
+      return new Response(JSON.stringify(apps), { headers: corsHeaders });
+    }
 
     if (url.pathname === "/upload/start") {
       const { fileName } = await request.json();
@@ -180,6 +211,7 @@ export default {
       appData.fileName = key.replace('files/', '');
       appData.webLink = `${host}/v/${appData.id}`;
       appData.ipaLink = `${host}/f/${appData.fileName}`;
+      appData.downloads = 0;
       appData.releaseDate = new Date().toLocaleDateString('vi-VN', { day: 'numeric', month: 'long', year: 'numeric' });
       const bridgeUrl = `${host}/i/${appData.id}`;
       try {
@@ -204,20 +236,14 @@ export default {
       return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
     }
 
-    if (url.pathname === "/list") {
-      const list = await env.MY_BUCKET.list({ prefix: "meta/" });
-      const apps = [];
-      for (const o of list.objects) { apps.push(await (await env.MY_BUCKET.get(o.key)).json()); }
-      return new Response(JSON.stringify(apps), { headers: corsHeaders });
-    }
-
     if (url.pathname === "/delete") {
       const id = url.searchParams.get("id");
       const m = await (await env.MY_BUCKET.get(`meta/${id}.json`)).json();
       await env.MY_BUCKET.delete(`files/${m.fileName}`); await env.MY_BUCKET.delete(`meta/${id}.json`);
       return new Response("OK", { headers: corsHeaders });
     }
-    return new Response("Not Found", { status: 404 });
+
+    return new Response("Not Found", { status: 404, headers: corsHeaders });
   }
 };
 
@@ -226,16 +252,69 @@ function generatePlist(app, host) {
 }
 
 function generateV32View(app, host) {
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${app.name}</title>
-    <style>:root{--blue:#007aff;--bg:#f5f5f7}body{background:var(--bg);color:#1c1c1e;font-family:-apple-system,sans-serif;margin:0;padding:20px;display:flex;justify-content:center}.container{width:100%;max-width:500px;background:#fff;border-radius:30px;box-shadow:0 10px 40px rgba(0,0,0,.05);overflow:hidden}.header{padding:40px 20px;text-align:center}.icon{width:110px;height:110px;border-radius:24px;box-shadow:0 8px 20px rgba(0,0,0,.1);margin-bottom:15px}.btn{display:block;text-decoration:none;padding:16px;border-radius:14px;font-weight:700;margin:10px 30px;text-align:center}.btn-in{background:var(--blue);color:#fff}.btn-ipa{background:#f2f2f7;color:#1c1c1e;font-size:14px;border:1px solid #e5e5ea}.st{background:#fafafa;padding:10px 20px;font-size:11px;font-weight:700;color:#86868b;text-transform:uppercase;border-top:1px solid #f2f2f2}.row{display:flex;justify-content:space-between;padding:12px 20px;border-bottom:1px solid #f2f2f2;font-size:13px}.guide{padding:20px;font-size:13px;line-height:1.6}</style>
-    </head><body><div class="container"><div class="header"><img src="${app.icon}" class="icon"><h1>${app.name}</h1><div style="background:#eef7ff;color:var(--blue);padding:5px 15px;border-radius:20px;font-size:11px;font-weight:700;display:inline-block">${app.certName}</div></div>
-    <a href="${host}/i/${app.id}" class="btn btn-in">⬇ Download & Install</a><a href="${app.ipaLink}" class="btn btn-ipa">⬇ Tải .IPA (${app.size})</a>
-    <div class="st">THÔNG TIN ỨNG DỤNG</div>
-    <div class="row"><div>Ngày phát hành</div><b>${app.releaseDate}</b></div>
-    <div class="row"><div>Phiên bản</div><b>${app.version} (${app.build})</b></div>
-    <div class="row"><div>Yêu cầu iOS</div><b>${app.minOs}+</b></div>
-    <div class="row" style="border:none"><div>Executable</div><b>${app.executable}</b></div>
-    <div class="st">Hướng dẫn cài đặt</div><div class="guide">Sử dụng Safari. Sau khi cài, vào <b>Cài đặt > Cài đặt chung > VPN & Quản lý thiết bị</b>. Tin cậy <b>${app.certName}</b>.</div></div></body></html>`;
+  const downloadStr = app.downloads >= 1000 ? (app.downloads / 1000).toFixed(1) + 'k' : app.downloads || 0;
+  return `<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>${app.name} - IPA Master</title>
+    <style>
+        :root { --primary: #007aff; --bg: #f2f2f7; --card-bg: rgba(255, 255, 255, 0.8); --text: #1c1c1e; --text-secondary: #8e8e93; --border: rgba(0, 0, 0, 0.05); }
+        @media (prefers-color-scheme: dark) { :root { --bg: #000000; --card-bg: rgba(28, 28, 30, 0.8); --text: #ffffff; --text-secondary: #98989d; --border: rgba(255, 255, 255, 0.1); } }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 15px; display: flex; justify-content: center; background-attachment: fixed; }
+        .container { width: 100%; max-width: 440px; background: var(--card-bg); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border-radius: 35px; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden; animation: fadeIn 0.6s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .header { padding: 35px 20px 25px; text-align: center; }
+        .icon { width: 110px; height: 110px; border-radius: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); margin-bottom: 15px; object-fit: cover; }
+        h1 { margin: 0 0 8px; font-size: 24px; font-weight: 800; }
+        .cert-tag { background: rgba(0, 122, 255, 0.1); color: var(--primary); padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-block; margin-bottom: 10px; }
+        .stats-badge { background: rgba(52, 199, 89, 0.1); color: #34c759; padding: 5px 12px; border-radius: 12px; font-size: 12px; font-weight: 700; display: block; width: fit-content; margin: 0 auto; }
+        .actions { padding: 0 25px 25px; }
+        .btn { display: flex; align-items: center; justify-content: center; text-decoration: none; padding: 16px; border-radius: 16px; font-weight: 700; margin-bottom: 10px; font-size: 15px; transition: 0.2s; }
+        .btn-in { background: var(--primary); color: #fff; box-shadow: 0 8px 20px rgba(0, 122, 255, 0.3); }
+        .btn-ipa { background: rgba(142, 142, 147, 0.12); color: var(--text); border: 1px solid var(--border); }
+        .btn:active { transform: scale(0.96); }
+        .st { padding: 15px 20px 10px; font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; }
+        .info-box { background: rgba(142, 142, 147, 0.05); margin: 0 20px 20px; border-radius: 24px; overflow: hidden; border: 1px solid var(--border); }
+        .row { display: flex; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--border); font-size: 13px; }
+        .row:last-child { border: none; }
+        .row span { color: var(--text-secondary); }
+        .guide { padding: 0 25px 30px; font-size: 13px; line-height: 1.6; color: var(--text-secondary); }
+        .guide b { color: var(--primary); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="${app.icon}" class="icon">
+            <h1>${app.name}</h1>
+            <div class="cert-tag">${app.certName}</div>
+            <div class="stats-badge">🔥 ${downloadStr} Người Đã Tải Xuống</div>
+        </div>
+
+        <div class="actions">
+            <a href="${host}/i/${app.id}" class="btn btn-in">⬇ Download & Install</a>
+            <a href="${app.ipaLink}" class="btn btn-ipa">⬇ Tải .IPA (${app.size})</a>
+        </div>
+
+        <div class="st">THÔNG TIN ỨNG DỤNG</div>
+        <div class="info-box">
+            <div class="row"><span>Ngày phát hành</span><b>${app.releaseDate}</b></div>
+            <div class="row"><span>Phiên bản</span><b>${app.version} (${app.build})</b></div>
+            <div class="row"><span>Yêu cầu iOS</span><b>${app.minOs}+</b></div>
+            <div class="row"><span>Executable</span><b>${app.executable}</b></div>
+            <div class="row"><span>Ngưởi Đã Tải Xuống</span><b>${app.downloads || 0}</b></div>
+        </div>
+
+        <div class="st">Hướng dẫn cài đặt</div>
+        <div class="guide">
+            Sử dụng <b>Safari</b>. Sau khi cài, vào <b>Cài đặt > Cài đặt chung > VPN & Quản lý thiết bị</b>. Tin cậy <b>${app.certName}</b> để bắt đầu sử dụng.
+        </div>
+    </div>
+</body>
+</html>`;
 }
 ```
 
