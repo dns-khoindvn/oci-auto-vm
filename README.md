@@ -5,7 +5,7 @@
 ![Platform](https://img.shields.io/badge/Platform-Cloudflare_Workers-orange.svg)
 ![Storage](https://img.shields.io/badge/Storage-Cloudflare_R2-yellow.svg)
 
-**IPA Master V37** là hệ thống quản lý và phân phối tệp tin IPA chuyên nghiệp cho iOS, sử dụng hạ tầng không máy chủ (Serverless) của Cloudflare. Hệ thống cho phép lưu trữ tệp lớn, bóc tách metadata tự động và cài đặt OTA (Over-the-Air) cực nhanh. Phiên bản V37 hỗ trợ **quản lý đa tài khoản (Multi-Account Hub)** trong cùng một dashboard.
+**OTA Manager** là hệ thống quản lý và phân phối tệp tin IPA chuyên nghiệp cho iOS, sử dụng hạ tầng không máy chủ (Serverless) của Cloudflare. Hệ thống cho phép lưu trữ tệp lớn, bóc tách metadata tự động và cài đặt OTA (Over-the-Air) cực nhanh. Phiên bản V37 hỗ trợ **quản lý đa tài khoản (Multi-Account Hub)** trong cùng một dashboard.
 
 ---
 
@@ -94,7 +94,7 @@ const ACCOUNTS = [
 ## 📂 Cấu trúc thư mục
 
 ```
-ipa-master-v37/
+OTA Manager/
 ├── README.md              # File hướng dẫn này
 ├── worker.js              # Mã nguồn Cloudflare Worker (Backend)
 └── index.html             # Command Center - Multi-Account Dashboard
@@ -107,13 +107,6 @@ ipa-master-v37/
 > Copy đoạn code dưới đây dán vào Cloudflare Worker của bạn.
 
 ```javascript
-/**
- * IPA Master V38 - BẢN CLEAN PREMIUM (KHÔNG QUẢNG CÁO)
- * - Đầy đủ thông tin chi tiết (Build, Executable, Cert...)
- * - Giao diện Premium Luxury
- * - Đếm lượt tải thực tế (Real-time)
- */
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS, PUT",
