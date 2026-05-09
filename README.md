@@ -446,9 +446,9 @@ function generateV32View(app, host) {
 <script>
 // --- DANH SÁCH MÁY CHỦ ĐÃ CẬP NHẬT ---
 const ACCOUNTS = [
-        { name: "Tài khoản 01", api: "https://dev.ipadl.workers.dev" },
-        { name: "Tài khoản 02", api: "https://dev.ipadl1.workers.dev" },
-        { name: "Tài khoản 03", api: "https://dev.ipadl2.workers.dev" }
+        { name: "Tài khoản 01", api: "https://khoindvn.workers.dev" },
+        { name: "Tài khoản 02", api: "https://khoindvn.workers.dev" },
+        { name: "Tài khoản 03", api: "https://khoindvn.workers.dev" }
     ];
 
 
