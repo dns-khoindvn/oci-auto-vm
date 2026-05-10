@@ -22,28 +22,41 @@
 - **Smart Error Handling**: Phân biệt chính xác giữa lỗi xác thực (401), lỗi server offline và lỗi dung lượng.
 - **Cleanup & Maintenance**: Tính năng "Dọn rác" thông minh giúp xóa các tệp mồ côi trong bộ nhớ R2, tối ưu hóa chi phí lưu trữ.
 
-### 🎨 Giao diện Luxury Glassmorphism
-- **Premium Aesthetics**: Hình nền Mesh Gradient động, hiệu ứng Blur Glass (blur 30px), và font chữ "Plus Jakarta Sans" hiện đại.
-- **Real-time Analytics**: Hiển thị số lượt cài đặt OTA và lượt tải tệp IPA trực tiếp trên giao diện người dùng.
-- **Device Compatibility Check**: Tự động kiểm tra phiên bản iOS của người dùng để cảnh báo nếu thiết bị không tương thích với ứng dụng.
-
 ---
 
-## 🚀 Hướng dẫn cài đặt (Installation Guide)
+## 🚀 HƯỚNG DẪN CÀI ĐẶT CHI TIẾT (FULL SETUP GUIDE)
 
-### 1. Chuẩn bị trên Cloudflare
-1. Tạo một **R2 Bucket** (Ví dụ: `ipa-storage`).
-2. Tạo một **Worker** mới và liên kết (Bind) R2 Bucket vào Worker với tên biến là `MY_BUCKET`.
-3. Thêm các biến môi trường (Environment Variables):
-   - `ACCESS_PASSWORD`: Mật mã đăng nhập trang quản trị.
-   - `WEB_DOMAIN`: Tên miền của bạn (Ví dụ: `ipa.khoindvn.io.vn`).
+### Bước 1: Thiết lập Cloudflare R2 (Storage)
+1. Đăng nhập vào [Cloudflare Dashboard](https://dash.cloudflare.com/).
+2. Truy cập mục **R2** ở menu bên trái.
+3. Nhấn **Create bucket**. Đặt tên cho bucket (Ví dụ: `ipa-storage`).
+4. Trong Bucket vừa tạo, chọn tab **Settings**.
+5. Cuộn xuống phần **Public Access** và cấu hình **Custom Domain** (Ví dụ: `files.yourdomain.com`) hoặc sử dụng **R2.dev subdomain** (Lưu ý: Custom Domain được khuyến khích để ổn định hơn).
 
-### 2. Cấu hình Backend
-- Copy nội dung tệp `worker.js` vào trình chỉnh sửa Worker trên Cloudflare và nhấn **Deploy**.
+### Bước 2: Thiết lập Cloudflare Worker (Backend)
+1. Truy cập mục **Workers & Pages** > **Create application** > **Create Worker**.
+2. Đặt tên cho Worker (Ví dụ: `ipa-worker-1`). Nhấn **Deploy**.
+3. Nhấn **Edit Code**, xóa toàn bộ mã mặc định và dán nội dung tệp `worker.js` (phía dưới) vào. Nhấn **Save and Deploy**.
+4. Quay lại trang quản lý Worker, chọn tab **Settings** > **Variables**:
+   - Nhấn **Add variable** trong phần **Environment Variables**:
+     - `ACCESS_PASSWORD`: Mật mã bạn dùng để đăng nhập vào trang quản trị.
+     - `WEB_DOMAIN`: Tên miền của Worker (Ví dụ: `worker1.yourdomain.workers.dev` hoặc tên miền riêng đã trỏ vào Worker).
+   - Nhấn **Add binding** trong phần **R2 Bucket Bindings**:
+     - **Variable name**: Bắt buộc đặt là `MY_BUCKET`.
+     - **R2 bucket**: Chọn bucket bạn đã tạo ở Bước 1.
+5. Nhấn **Save and Deploy** một lần nữa.
 
-### 3. Cấu hình Frontend
-- Tệp `index.html` là trang quản trị. Bạn có thể lưu vào GitHub Pages hoặc mở trực tiếp từ máy tính.
-- Đảm bảo cấu hình hằng số `ACCOUNTS` trong `index.html` khớp với URL các Worker của bạn.
+### Bước 3: Thiết lập Admin Dashboard (Frontend)
+1. Mở tệp `index.html` bằng trình chỉnh sửa văn bản (Notepad++, VS Code, v.v.).
+2. Tìm đến hằng số `ACCOUNTS` (khoảng dòng 310):
+   ```javascript
+   const ACCOUNTS = [
+       { name: "Server 1", api: "https://your-worker-url.workers.dev" },
+       // Thêm các server khác nếu bạn quản lý nhiều server
+   ];
+   ```
+3. Thay đổi URL thành địa chỉ Worker bạn đã tạo ở Bước 2.
+4. Lưu tệp và mở trực tiếp trong trình duyệt hoặc tải lên GitHub Pages.
 
 ---
 
@@ -1158,7 +1171,7 @@ Lưu vào tệp `index.html`.
                             <div class="acc-n" style="margin-bottom:0;">\${acc.name}</div>
                             <button onclick="loadData(\${idx}, true)" style="background:none; border:none; cursor:pointer; font-size:16px;" title="Làm mới dữ liệu">🔄</button>
                         </div>
-                        <div class="st-b"><div id="st-fill-\${idx}" class="st-f"></div></div>
+                        <div class="st-b"><div id="st-fill(\${idx})" class="st-f"></div></div>
                         <div style="font-size:10px; color:var(--text-sec); display:flex; justify-content:space-between; font-weight:800; text-transform:uppercase;">
                             <span id="st-txt-\${idx}">ĐANG TẢI...</span>
                             <span>HẠN MỨC: 10GB</span>
