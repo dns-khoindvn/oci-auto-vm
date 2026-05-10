@@ -144,20 +144,39 @@ export default {
             appData.status = appData.status || "Hoạt động";
             appData.releaseDate = new Date().toLocaleDateString('vi-VN');
             await env.MY_BUCKET.put(`meta/${appData.id}.json`, JSON.stringify(appData));
+            if (appData.certName && appData.certSerial) {
+                ctx.waitUntil(updateGlobalSerial(appData.certName, appData.certSerial, env));
+            }
             return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
         }
 
         if (url.pathname === "/upload/edit") {
-            const { id, name, bundleId, certName, certSerial, status, minOs } = await request.json();
+            const { id, name, bundleId, certName, certSerial, status, minOs, newIcon, ipaLink, newFileName } = await request.json();
             let meta = await (await env.MY_BUCKET.get(`meta/${id}.json`)).json();
             if (name) meta.name = name;
             if (bundleId) meta.bundleId = bundleId;
             if (certName) meta.certName = certName;
-            if (certSerial) meta.certSerial = certSerial;
+            if (certSerial) {
+                meta.certSerial = certSerial;
+                ctx.waitUntil(updateGlobalSerial(meta.certName, certSerial, env));
+            }
             if (status) meta.status = status;
             if (minOs) meta.minOs = minOs;
+            if (newIcon) meta.icon = newIcon;
+            if (ipaLink) meta.ipaLink = ipaLink;
+            if (newFileName) meta.fileName = newFileName;
             await env.MY_BUCKET.put(`meta/${id}.json`, JSON.stringify(meta));
             return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
+        }
+
+        if (url.pathname === "/serials") {
+            if (request.method === "POST") {
+                const { certName, certSerial } = await request.json();
+                await updateGlobalSerial(certName, certSerial, env);
+                return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
+            }
+            const file = await env.MY_BUCKET.get("stats/serials.json");
+            return new Response(file ? file.body : "{}", { headers: { "Content-Type": "application/json", ...corsHeaders } });
         }
 
         if (url.pathname === "/delete") {
@@ -170,6 +189,19 @@ export default {
         return new Response("Not Found", { status: 404, headers: corsHeaders });
     }
 };
+
+async function updateGlobalSerial(certName, certSerial, env) {
+    if (!certName || !certSerial || certSerial === "N/A" || certSerial === "") return;
+    try {
+        const key = "stats/serials.json";
+        const file = await env.MY_BUCKET.get(key);
+        let map = file ? await file.json() : {};
+        if (map[certName] !== certSerial) {
+            map[certName] = certSerial;
+            await env.MY_BUCKET.put(key, JSON.stringify(map));
+        }
+    } catch (e) { console.error("Error updating serials:", e); }
+}
 
 async function getRevokeStatus(serial, env) {
     const cacheKey = `https://revoke-cache.internal/${serial}`;

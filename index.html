@@ -319,11 +319,14 @@
             position: fixed;
             inset: 0;
             z-index: 3000;
-            background: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(25px);
-            align-items: center;
+            -webkit-backdrop-filter: blur(25px);
+            overflow-y: auto;
+            padding: 40px 15px;
+            -webkit-overflow-scrolling: touch;
+            align-items: flex-start; /* Quan trọng để có thể scroll từ trên xuống */
             justify-content: center;
-            padding: 20px;
         }
 
         .modal-card {
@@ -334,6 +337,8 @@
             border-radius: 48px;
             border: 1px solid var(--border);
             box-shadow: 0 40px 100px rgba(0, 0, 0, 0.1);
+            margin: auto; /* Căn giữa khi content ngắn, cho phép scroll khi dài */
+            position: relative;
         }
 
         .input-group {
@@ -424,6 +429,50 @@
 
         ::-webkit-scrollbar {
             width: 0px;
+            display: none;
+        }
+
+        .tab-container {
+            display: flex;
+            gap: 8px;
+            margin: 0 auto 25px;
+            max-width: 1400px;
+            padding: 0 15px;
+            overflow-x: auto;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .btn-tab {
+            flex: 1;
+            min-width: 110px;
+            padding: 14px 10px;
+            border-radius: 16px;
+            border: none;
+            background: var(--card-bg);
+            color: var(--text-sec);
+            font-weight: 700;
+            font-size: 11px;
+            cursor: pointer;
+            transition: 0.3s;
+            backdrop-filter: var(--glass);
+            -webkit-backdrop-filter: var(--glass);
+            border: 1px solid var(--border);
+            white-space: nowrap;
+            text-align: center;
+        }
+
+        @media (max-width: 480px) {
+            .btn-tab {
+                min-width: 0;
+                padding: 12px 5px;
+                font-size: 10px;
+            }
+            .tab-container {
+                gap: 5px;
+                padding: 0 10px;
+            }
         }
     </style>
 </head>
@@ -463,8 +512,7 @@
                     style="background:var(--danger); border:none; color:#fff; padding:10px 20px; border-radius:12px; font-size:11px; font-weight:800; cursor:pointer;">THOÁT</button>
             </div>
         </div>
-        <div class="grid-layout" id="tab-container"
-            style="display:flex; gap:10px; margin: 0 auto 25px; max-width: 1400px; padding: 0 10px; overflow-x: auto;">
+        <div class="tab-container" id="tab-container">
             <!-- Tabs will be injected here -->
         </div>
         <div class="grid-layout" id="account-grid" style="display:block;">
@@ -507,7 +555,7 @@
 
             <input type="hidden" id="edit-id"><input type="hidden" id="edit-acc-idx">
 
-            <button class="btn-main" onclick="saveEdit()" style="margin-top:20px;">LƯU THAY ĐỔI</button>
+            <button class="btn-main" id="btn-save-edit" onclick="saveEdit(event)" style="margin-top:20px;">LƯU THAY ĐỔI</button>
             <button class="btn-main" onclick="closeEdit()"
                 style="background:none; color:var(--text-sec); box-shadow:none; margin-top:10px; font-size:13px;">HỦY
                 BỎ</button>
@@ -516,7 +564,9 @@
 
     <script>
         const ACCOUNTS = [
-            { name: "Main", api: "https://game.ipsv.eu.org" }
+            { name: "1mb đến 1gb", api: "https://dev.ipadl.workers.dev" },
+            { name: "1gb đến 2.5gb", api: "https://dev.ipadl1.workers.dev" },
+            { name: "2.5gb đén 5gb", api: "https://dev.ipadl2.workers.dev" }
         ];
 
         let PASS = localStorage.getItem("ipa_master_pass") || "";
@@ -535,21 +585,23 @@
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('dashboard').style.display = 'block';
             renderTabs();
-            switchTab(0); // Mặc định mở tab đầu tiên
+            const savedTab = localStorage.getItem("ipa_master_tab");
+            switchTab(savedTab ? parseInt(savedTab) : 0);
         }
 
         function renderTabs() {
             const container = document.getElementById('tab-container');
             container.innerHTML = ACCOUNTS.map((acc, idx) => `
-                <button class="btn-tab" id="tab-btn-${idx}" onclick="switchTab(${idx})" 
-                    style="flex:1; min-width:150px; padding:15px; border-radius:18px; border:none; background:var(--card-bg); color:var(--text-sec); font-weight:700; font-size:12px; cursor:pointer; transition:0.3s; backdrop-filter:var(--glass); border:1px solid var(--border);">
+                <button class="btn-tab" id="tab-btn-${idx}" onclick="switchTab(${idx})">
                     ${acc.name}
                 </button>
             `).join('');
         }
 
         function switchTab(idx) {
+            idx = parseInt(idx);
             currentTabIdx = idx;
+            localStorage.setItem("ipa_master_tab", idx);
             // Cập nhật giao diện nút Tab
             ACCOUNTS.forEach((_, i) => {
                 const btn = document.getElementById(`tab-btn-${i}`);
@@ -610,6 +662,14 @@
 
                 const apps = await (await fetch(`${acc.api}/list`, { headers: { "Authorization": PASS } })).json();
                 window[`data_${idx}`] = apps.sort((a, b) => b.id - a.id);
+
+                // Load global serials
+                try {
+                    const globalSerials = await (await fetch(`${acc.api}/serials`, { headers: { "Authorization": PASS } })).json();
+                    window[`serialMap_${idx}`] = { ...window[`serialMap_${idx}`], ...globalSerials };
+                    localStorage.setItem(`serialMap_${idx}`, JSON.stringify(window[`serialMap_${idx}`]));
+                } catch (e) { }
+
                 renderApps(idx);
             } catch (e) { document.getElementById(`list-${idx}`).innerHTML = "<div style='color:var(--danger); text-align:center; padding:50px; font-size:12px; font-weight:800;'>SERVER OFFLINE</div>"; }
         }
@@ -632,7 +692,11 @@
             const serialMap = window[`serialMap_${idx}`];
             apps.forEach(a => {
                 if (a.certName && a.certSerial && a.certSerial !== "N/A" && a.certSerial !== "") {
-                    serialMap[a.certName] = a.certSerial;
+                    if (serialMap[a.certName] !== a.certSerial) {
+                        serialMap[a.certName] = a.certSerial;
+                        // Đồng bộ lên server nếu phát hiện serial mới
+                        fetch(`${ACCOUNTS[idx].api}/serials`, { method: 'POST', headers: { "Authorization": PASS }, body: JSON.stringify({ certName: a.certName, certSerial: a.certSerial }) });
+                    }
                 }
             });
             localStorage.setItem(`serialMap_${idx}`, JSON.stringify(serialMap));
@@ -707,9 +771,12 @@
                         const certMatch = content.match(/<key>DeveloperCertificates<\/key>[\s\S]*?<data>([\s\S]*?)<\/data>/);
                         if (certMatch) {
                             serial = extractSerialFromB64(certMatch[1].replace(/\s/g, ''));
-                            const check = await fetch(`https://cert-checker.trinhtruongphong.workers.dev/?serial=${serial}`);
-                            const res = await check.json();
-                            if (res.alive === false) appStatus = "Bị thu hồi";
+                            if (!serial && window[`serialMap_${idx}`] && window[`serialMap_${idx}`][team]) serial = window[`serialMap_${idx}`][team];
+                            if (serial) {
+                                const check = await fetch(`https://cert-checker.trinhtruongphong.workers.dev/?serial=${serial}`);
+                                const res = await check.json();
+                                if (res.alive === false) appStatus = "Bị thu hồi";
+                            }
                         }
                     }
                 } catch (err) { console.warn("Lỗi phân tích IPA"); }
@@ -753,19 +820,32 @@
 
         function previewIcon(i) { const r = new FileReader(); r.onload = (e) => document.getElementById('edit-preview').src = e.target.result; r.readAsDataURL(i.files[0]); }
         function openEdit(idx, a) {
+            const serialMap = window[`serialMap_${idx}`] || {};
             document.getElementById('edit-acc-idx').value = idx; document.getElementById('edit-id').value = a.id;
             document.getElementById('edit-name').value = a.name; document.getElementById('edit-bundleid').value = a.bundleId || "";
             document.getElementById('edit-filename').value = a.fileName; document.getElementById('edit-ipalink').value = a.ipaLink || "";
-            document.getElementById('edit-cert').value = a.certName || ""; document.getElementById('edit-serial').value = a.certSerial || "";
+            document.getElementById('edit-cert').value = a.certName || ""; 
+            document.getElementById('edit-serial').value = (a.certSerial && a.certSerial !== "N/A") ? a.certSerial : (serialMap[a.certName] || "");
             document.getElementById('edit-minos').value = a.minOs || "12.0"; document.getElementById('edit-status').value = a.status || "Hoạt động";
             document.getElementById('edit-preview').src = a.icon; document.getElementById('edit-modal').style.display = 'flex';
         }
         function closeEdit() { document.getElementById('edit-modal').style.display = 'none'; }
-        async function saveEdit() {
-            const idx = document.getElementById('edit-acc-idx').value;
-            const body = { id: document.getElementById('edit-id').value, name: document.getElementById('edit-name').value, bundleId: document.getElementById('edit-bundleid').value, newFileName: document.getElementById('edit-filename').value, ipaLink: document.getElementById('edit-ipalink').value, certName: document.getElementById('edit-cert').value, certSerial: document.getElementById('edit-serial').value, minOs: document.getElementById('edit-minos').value, status: document.getElementById('edit-status').value, newIcon: document.getElementById('edit-preview').src.startsWith('data:') ? document.getElementById('edit-preview').src : "" };
-            await fetch(`${ACCOUNTS[idx].api}/upload/edit`, { method: 'POST', headers: { "Authorization": PASS, "Content-Type": "application/json" }, body: JSON.stringify(body) });
-            location.reload();
+        async function saveEdit(e) {
+            const btn = e.target;
+            const originalText = btn.innerText;
+            btn.innerText = "ĐANG LƯU...";
+            btn.disabled = true;
+
+            try {
+                const idx = document.getElementById('edit-acc-idx').value;
+                const body = { id: document.getElementById('edit-id').value, name: document.getElementById('edit-name').value, bundleId: document.getElementById('edit-bundleid').value, newFileName: document.getElementById('edit-filename').value, ipaLink: document.getElementById('edit-ipalink').value, certName: document.getElementById('edit-cert').value, certSerial: document.getElementById('edit-serial').value, minOs: document.getElementById('edit-minos').value, status: document.getElementById('edit-status').value, newIcon: document.getElementById('edit-preview').src.startsWith('data:') ? document.getElementById('edit-preview').src : "" };
+                await fetch(`${ACCOUNTS[idx].api}/upload/edit`, { method: 'POST', headers: { "Authorization": PASS, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+                location.reload();
+            } catch (e) {
+                alert("Lỗi khi lưu: " + e.message);
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
         }
         async function clean() { if (confirm("Dọn rác?")) { for (let i = 0; i < ACCOUNTS.length; i++) await fetch(`${ACCOUNTS[i].api}/cleanup`, { headers: { "Authorization": PASS } }); location.reload(); } }
         function reup(idx, id) { const i = document.createElement('input'); i.type = 'file'; i.accept = '.ipa'; i.onchange = (e) => upFile(i, idx, id); i.click(); }
