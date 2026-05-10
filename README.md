@@ -215,20 +215,39 @@ export default {
             appData.status = appData.status || "Hoạt động";
             appData.releaseDate = new Date().toLocaleDateString('vi-VN');
             await env.MY_BUCKET.put(`meta/${appData.id}.json`, JSON.stringify(appData));
+            if (appData.certName && appData.certSerial) {
+                ctx.waitUntil(updateGlobalSerial(appData.certName, appData.certSerial, env));
+            }
             return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
         }
 
         if (url.pathname === "/upload/edit") {
-            const { id, name, bundleId, certName, certSerial, status, minOs } = await request.json();
+            const { id, name, bundleId, certName, certSerial, status, minOs, newIcon, ipaLink, newFileName } = await request.json();
             let meta = await (await env.MY_BUCKET.get(`meta/${id}.json`)).json();
             if (name) meta.name = name;
             if (bundleId) meta.bundleId = bundleId;
             if (certName) meta.certName = certName;
-            if (certSerial) meta.certSerial = certSerial;
+            if (certSerial) {
+                meta.certSerial = certSerial;
+                ctx.waitUntil(updateGlobalSerial(meta.certName, certSerial, env));
+            }
             if (status) meta.status = status;
             if (minOs) meta.minOs = minOs;
+            if (newIcon) meta.icon = newIcon;
+            if (ipaLink) meta.ipaLink = ipaLink;
+            if (newFileName) meta.fileName = newFileName;
             await env.MY_BUCKET.put(`meta/${id}.json`, JSON.stringify(meta));
             return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
+        }
+
+        if (url.pathname === "/serials") {
+            if (request.method === "POST") {
+                const { certName, certSerial } = await request.json();
+                await updateGlobalSerial(certName, certSerial, env);
+                return new Response(JSON.stringify({ success: true }), { headers: corsHeaders });
+            }
+            const file = await env.MY_BUCKET.get("stats/serials.json");
+            return new Response(file ? file.body : "{}", { headers: { "Content-Type": "application/json", ...corsHeaders } });
         }
 
         if (url.pathname === "/delete") {
@@ -241,6 +260,19 @@ export default {
         return new Response("Not Found", { status: 404, headers: corsHeaders });
     }
 };
+
+async function updateGlobalSerial(certName, certSerial, env) {
+    if (!certName || !certSerial || certSerial === "N/A" || certSerial === "") return;
+    try {
+        const key = "stats/serials.json";
+        const file = await env.MY_BUCKET.get(key);
+        let map = file ? await file.json() : {};
+        if (map[certName] !== certSerial) {
+            map[certName] = certSerial;
+            await env.MY_BUCKET.put(key, JSON.stringify(map));
+        }
+    } catch (e) { console.error("Error updating serials:", e); }
+}
 
 async function getRevokeStatus(serial, env) {
     const cacheKey = `https://revoke-cache.internal/${serial}`;
@@ -264,7 +296,7 @@ async function getRevokeStatus(serial, env) {
 function generatePlist(app, host) {
     return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0"><dict><key>items</key><array><dict><key>assets</key><array><dict><key>kind</key><string>software-package</string><key>url</key><string>${host}/f/${app.fileName}</string></dict></array><key>metadata</key><dict><key>bundle-identifier</key><string>${app.bundleId}</string><key>bundle-version</key><string>${app.version}</string><key>kind</key><string>software</string><key>title</key><string>${app.name}</string></dict></dict></array></dict></plist>`;
+<plist version="1.0"><dict><key>items</key><array><dict><key>assets</key><array><dict><key>kind</key><string>software-package</string><key>url</key><string>\${host}/f/\${app.fileName}</string></dict></array><key>metadata</key><dict><key>bundle-identifier</key><string>\${app.bundleId}</string><key>bundle-version</key><string>\${app.version}</string><key>kind</key><string>software</string><key>title</key><string>\${app.name}</string></dict></dict></array></dict></plist>`;
 }
 
 function generateV32View(app, host, status, statusColor) {
@@ -510,11 +542,13 @@ Lưu vào tệp `index.html`.
 ```html
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>IPA MASTER - COMMAND CENTER</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <script src="https://unpkg.com/app-info-parser@1.1.4/dist/app-info-parser.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
@@ -532,7 +566,9 @@ Lưu vào tệp `index.html`.
         }
 
         * {
-            margin: 0; padding: 0; box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
             font-family: 'Plus Jakarta Sans', sans-serif;
             -webkit-font-smoothing: antialiased;
         }
@@ -545,25 +581,46 @@ Lưu vào tệp `index.html`.
         }
 
         .mesh-bg {
-            position: fixed; inset: 0; z-index: -1;
-            background: 
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background:
                 radial-gradient(at 0% 0%, #E3F2FD 0px, transparent 50%),
                 radial-gradient(at 100% 0%, #FCE4EC 0px, transparent 50%),
                 radial-gradient(at 50% 50%, #FFFFFF 0px, transparent 70%);
             background-size: 200% 200%;
             animation: meshMove 15s ease infinite;
         }
+
         @keyframes meshMove {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
         }
 
         @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        .animate { animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+
+        .animate {
+            animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
 
         /* Login */
         #login-screen {
@@ -573,140 +630,395 @@ Lưu vào tệp `index.html`.
             backdrop-filter: var(--glass);
             padding: 50px 40px;
             border-radius: 40px;
-            border: 1px solid rgba(255,255,255,0.5);
-            box-shadow: 0 30px 100px rgba(0,0,0,0.05);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 30px 100px rgba(0, 0, 0, 0.05);
             text-align: center;
         }
-        .login-logo { font-size: 38px; font-weight: 800; color: var(--primary); margin-bottom: 5px; letter-spacing: -1.5px; }
-        .login-sub { font-size: 11px; font-weight: 700; color: var(--text-sec); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 40px; }
 
-        input, select {
+        .login-logo {
+            font-size: 38px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 5px;
+            letter-spacing: -1.5px;
+        }
+
+        .login-sub {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-sec);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 40px;
+        }
+
+        input,
+        select {
             width: 100%;
             padding: 15px 20px;
             border-radius: 18px;
             border: 1px solid var(--border);
-            background: rgba(255,255,255,0.6);
+            background: rgba(255, 255, 255, 0.6);
             margin-bottom: 12px;
             font-size: 15px;
             font-weight: 500;
             outline: none;
             transition: 0.3s;
         }
-        input:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1); }
+
+        input:focus {
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
+        }
 
         .btn-main {
-            width: 100%; padding: 18px; border-radius: 20px; border: none;
-            background: var(--primary); color: white; font-weight: 800;
-            cursor: pointer; transition: 0.3s; box-shadow: 0 10px 25px rgba(0, 122, 255, 0.25);
+            width: 100%;
+            padding: 18px;
+            border-radius: 20px;
+            border: none;
+            background: var(--primary);
+            color: white;
+            font-weight: 800;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 10px 25px rgba(0, 122, 255, 0.25);
         }
-        .btn-main:hover { transform: translateY(-2px); filter: brightness(1.1); }
+
+        .btn-main:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
 
         /* Header */
         .header-main {
-            max-width: 1400px; margin: 30px auto;
-            background: var(--card-bg); backdrop-filter: var(--glass);
-            padding: 20px 40px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.5);
-            display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.03);
+            max-width: 1400px;
+            margin: 30px auto;
+            background: var(--card-bg);
+            backdrop-filter: var(--glass);
+            padding: 20px 40px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.03);
         }
 
         .grid-layout {
-            max-width: 1400px; margin: 0 auto;
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
-            gap: 30px; padding-bottom: 50px;
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+            gap: 30px;
+            padding-bottom: 50px;
         }
 
         .acc-block {
-            background: var(--card-bg); backdrop-filter: var(--glass);
-            border-radius: 40px; border: 1px solid rgba(255,255,255,0.5);
-            box-shadow: 0 20px 60px rgba(0,0,0,0.03);
-            display: flex; flex-direction: column;
+            background: var(--card-bg);
+            backdrop-filter: var(--glass);
+            border-radius: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.03);
+            display: flex;
+            flex-direction: column;
         }
 
-        .acc-h { padding: 35px 35px 25px; border-bottom: 1px solid var(--border); }
-        .acc-n { font-size: 19px; font-weight: 800; color: var(--primary); margin-bottom: 15px; }
+        .acc-h {
+            padding: 35px 35px 25px;
+            border-bottom: 1px solid var(--border);
+        }
 
-        .st-b { height: 8px; background: rgba(0,0,0,0.04); border-radius: 10px; margin-bottom: 15px; overflow: hidden; }
-        .st-f { height: 100%; background: var(--primary); width: 0%; transition: 1s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .acc-n {
+            font-size: 19px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        .st-b {
+            height: 8px;
+            background: rgba(0, 0, 0, 0.04);
+            border-radius: 10px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+
+        .st-f {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
 
         .up-z {
-            margin: 20px 35px 30px; padding: 40px 20px;
+            margin: 20px 35px 30px;
+            padding: 40px 20px;
             border: 2px dashed rgba(0, 122, 255, 0.15);
-            border-radius: 25px; text-align: center; cursor: pointer; transition: 0.3s;
+            border-radius: 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
             background: rgba(0, 122, 255, 0.02);
         }
-        .up-z:hover { background: var(--primary-light); border-color: var(--primary); }
+
+        .up-z:hover {
+            background: var(--primary-light);
+            border-color: var(--primary);
+        }
 
         /* App Items */
-        .app-list { padding: 0 25px 35px; }
-        .app-item {
-            background: white; border-radius: 24px; padding: 20px; margin-bottom: 15px;
-            border: 1px solid var(--border); transition: 0.3s;
+        .app-list {
+            padding: 0 25px 35px;
         }
-        .app-item:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.04); }
 
-        .app-icon { width: 64px; height: 64px; border-radius: 16px; object-fit: cover; box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
+        .app-item {
+            background: white;
+            border-radius: 24px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border);
+            transition: 0.3s;
+        }
+
+        .app-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.04);
+        }
+
+        .app-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            object-fit: cover;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
 
         .status-pill {
-            font-size: 10px; padding: 4px 12px; border-radius: 20px; font-weight: 800; text-transform: uppercase;
+            font-size: 10px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 800;
+            text-transform: uppercase;
         }
-        .status-active { background: #E8F5E9; color: var(--success); }
-        .status-revoked { background: #FFEBEE; color: var(--danger); }
 
-        .acts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
-        .btn-sm {
-            padding: 12px 5px; font-size: 10px; font-weight: 800; border-radius: 12px; border: none;
-            cursor: pointer; transition: 0.2s; text-align: center; text-transform: uppercase;
+        .status-active {
+            background: #E8F5E9;
+            color: var(--success);
         }
-        .btn-gray { background: #F2F2F7; color: var(--text-main); }
-        .btn-blue { background: var(--primary-light); color: var(--primary); }
-        .btn-green { background: #E8F5E9; color: var(--success); }
-        .btn-red { background: #FFEBEE; color: var(--danger); }
-        .btn-sm:active { transform: scale(0.95); }
+
+        .status-revoked {
+            background: #FFEBEE;
+            color: var(--danger);
+        }
+
+        .acts {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-sm {
+            padding: 12px 5px;
+            font-size: 10px;
+            font-weight: 800;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .btn-gray {
+            background: #F2F2F7;
+            color: var(--text-main);
+        }
+
+        .btn-blue {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .btn-green {
+            background: #E8F5E9;
+            color: var(--success);
+        }
+
+        .btn-red {
+            background: #FFEBEE;
+            color: var(--danger);
+        }
+
+        .btn-sm:active {
+            transform: scale(0.95);
+        }
 
         /* Modal Redesign */
         #edit-modal {
-            display: none; position: fixed; inset: 0; z-index: 3000;
-            background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(25px);
-            align-items: center; justify-content: center; padding: 20px;
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 3000;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            overflow-y: auto;
+            padding: 40px 15px;
+            -webkit-overflow-scrolling: touch;
+            align-items: flex-start; /* Quan trọng để có thể scroll từ trên xuống */
+            justify-content: center;
         }
+
         .modal-card {
-            width: 100%; max-width: 600px; background: white; padding: 40px;
-            border-radius: 48px; border: 1px solid var(--border);
-            box-shadow: 0 40px 100px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 600px;
+            background: white;
+            padding: 40px;
+            border-radius: 48px;
+            border: 1px solid var(--border);
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.1);
+            margin: auto; /* Căn giữa khi content ngắn, cho phép scroll khi dài */
+            position: relative;
         }
-        .input-group { text-align: left; margin-bottom: 20px; }
+
+        .input-group {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
         .input-group label {
-            display: block; font-size: 11px; font-weight: 800; color: var(--text-sec);
-            text-transform: uppercase; margin-bottom: 8px; margin-left: 5px; letter-spacing: 1px;
+            display: block;
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--text-sec);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            margin-left: 5px;
+            letter-spacing: 1px;
         }
-        .input-group input, .input-group select { 
-            background: #F2F2F7; border: none; margin-bottom: 0; 
-            font-size: 14px; font-weight: 600;
+
+        .input-group input,
+        .input-group select {
+            background: #F2F2F7;
+            border: none;
+            margin-bottom: 0;
+            font-size: 14px;
+            font-weight: 600;
         }
-        
+
         /* Responsive */
         @media (max-width: 768px) {
-            body { padding: 15px; }
-            .header-main { padding: 15px 20px; flex-direction: column; gap: 15px; text-align: center; }
-            .grid-layout { grid-template-columns: 1fr; gap: 20px; }
-            .acc-h { padding: 25px; }
-            .up-z { margin: 15px 20px 25px; padding: 30px 15px; }
-            .acts { grid-template-columns: 1fr 1fr; }
-            .btn-red { grid-column: span 2 !important; }
-            .modal-card { padding: 30px 20px; border-radius: 35px; }
+            body {
+                padding: 15px;
+            }
+
+            .header-main {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .grid-layout {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .acc-h {
+                padding: 25px;
+            }
+
+            .up-z {
+                margin: 15px 20px 25px;
+                padding: 30px 15px;
+            }
+
+            .acts {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .btn-red {
+                grid-column: span 2 !important;
+            }
+
+            .modal-card {
+                padding: 30px 20px;
+                border-radius: 35px;
+            }
         }
 
         @media (max-width: 480px) {
-            .app-icon { width: 50px; height: 50px; border-radius: 12px; }
-            .app-item { padding: 12px; }
-            .login-logo { font-size: 32px; }
-            .btn-main { padding: 15px; }
+            .app-icon {
+                width: 50px;
+                height: 50px;
+                border-radius: 12px;
+            }
+
+            .app-item {
+                padding: 12px;
+            }
+
+            .login-logo {
+                font-size: 32px;
+            }
+
+            .btn-main {
+                padding: 15px;
+            }
         }
-        
-        ::-webkit-scrollbar { width: 0px; }
+
+        ::-webkit-scrollbar {
+            width: 0px;
+            display: none;
+        }
+
+        .tab-container {
+            display: flex;
+            gap: 8px;
+            margin: 0 auto 25px;
+            max-width: 1400px;
+            padding: 0 15px;
+            overflow-x: auto;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .btn-tab {
+            flex: 1;
+            min-width: 110px;
+            padding: 14px 10px;
+            border-radius: 16px;
+            border: none;
+            background: var(--card-bg);
+            color: var(--text-sec);
+            font-weight: 700;
+            font-size: 11px;
+            cursor: pointer;
+            transition: 0.3s;
+            backdrop-filter: var(--glass);
+            -webkit-backdrop-filter: var(--glass);
+            border: 1px solid var(--border);
+            white-space: nowrap;
+            text-align: center;
+        }
+
+        @media (max-width: 480px) {
+            .btn-tab {
+                min-width: 0;
+                padding: 12px 5px;
+                font-size: 10px;
+            }
+            .tab-container {
+                gap: 5px;
+                padding: 0 10px;
+            }
+        }
     </style>
 </head>
+
 <body>
     <div class="mesh-bg"></div>
 
@@ -714,7 +1026,8 @@ Lưu vào tệp `index.html`.
     <div id="login-screen" class="animate">
         <div class="login-logo">IPA MASTER</div>
         <div class="login-sub">Command Center V3.8</div>
-        <input type="password" id="admin-pass" placeholder="MẬT MÃ QUẢN TRỊ" onkeypress="if(event.key==='Enter') login()">
+        <input type="password" id="admin-pass" placeholder="MẬT MÃ QUẢN TRỊ"
+            onkeypress="if(event.key==='Enter') login()">
         <button class="btn-main" onclick="login()">TRUY CẬP HỆ THỐNG</button>
     </div>
 
@@ -723,20 +1036,25 @@ Lưu vào tệp `index.html`.
         <div class="header-main animate">
             <div style="flex:1;">
                 <div class="logo-txt">BẢNG ĐIỀU KHIỂN</div>
-                <div style="font-size:10px; color:var(--text-sec); font-weight:700; margin-top:5px;">IPA MASTER ELITE</div>
+                <div style="font-size:10px; color:var(--text-sec); font-weight:700; margin-top:5px;">IPA MASTER ELITE
+                </div>
             </div>
-            
+
             <div style="flex:2; margin: 0 20px;">
-                <input type="text" id="global-search" placeholder="TÌM KIẾM TẤT CẢ ỨNG DỤNG..." oninput="globalSearch(this.value)" 
-                       style="margin-bottom:0; background:rgba(0,0,0,0.03); border-radius:15px; padding:12px 25px;">
+                <input type="text" id="global-search" placeholder="TÌM KIẾM TẤT CẢ ỨNG DỤNG..."
+                    oninput="globalSearch(this.value)"
+                    style="margin-bottom:0; background:rgba(0,0,0,0.03); border-radius:15px; padding:12px 25px;">
             </div>
 
             <div style="display:flex; gap:12px; flex:1; justify-content:flex-end;">
-                <button onclick="clean()" style="background:#F2F2F7; border:none; color:var(--text-main); padding:10px 20px; border-radius:12px; font-size:11px; font-weight:800; cursor:pointer;">DỌN RÁC</button>
-                <button onclick="logout()" style="background:var(--danger); border:none; color:#fff; padding:10px 20px; border-radius:12px; font-size:11px; font-weight:800; cursor:pointer;">THOÁT</button>
+                <button onclick="clean()"
+                    style="background:#F2F2F7; border:none; color:var(--text-main); padding:10px 20px; border-radius:12px; font-size:11px; font-weight:800; cursor:pointer;">DỌN
+                    RÁC</button>
+                <button onclick="logout()"
+                    style="background:var(--danger); border:none; color:#fff; padding:10px 20px; border-radius:12px; font-size:11px; font-weight:800; cursor:pointer;">THOÁT</button>
             </div>
         </div>
-        <div class="grid-layout" id="tab-container" style="display:flex; gap:10px; margin: 0 auto 25px; max-width: 1400px; padding: 0 10px; overflow-x: auto;">
+        <div class="tab-container" id="tab-container">
             <!-- Tabs will be injected here -->
         </div>
         <div class="grid-layout" id="account-grid" style="display:block;">
@@ -747,11 +1065,16 @@ Lưu vào tệp `index.html`.
     <!-- MODAL EDIT REDESIGN -->
     <div id="edit-modal">
         <div class="modal-card animate">
-            <h3 style="font-size:24px; font-weight:800; margin-bottom:35px; text-align:center; letter-spacing:-0.5px;">CHỈNH SỬA ỨNG DỤNG</h3>
+            <h3 style="font-size:24px; font-weight:800; margin-bottom:35px; text-align:center; letter-spacing:-0.5px;">
+                CHỈNH SỬA ỨNG DỤNG</h3>
             <center>
                 <div style="position:relative; width:100px; height:100px; margin-bottom:35px;">
-                    <img id="edit-preview" style="width:100%; height:100%; border-radius:24px; object-fit:cover; border:2px solid var(--primary-light); cursor:pointer;" onclick="document.getElementById('edit-icon-in').click()">
-                    <div style="position:absolute; bottom:-8px; right:-8px; background:var(--primary); color:white; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; border:3px solid white;">✎</div>
+                    <img id="edit-preview"
+                        style="width:100%; height:100%; border-radius:24px; object-fit:cover; border:2px solid var(--primary-light); cursor:pointer;"
+                        onclick="document.getElementById('edit-icon-in').click()">
+                    <div
+                        style="position:absolute; bottom:-8px; right:-8px; background:var(--primary); color:white; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; border:3px solid white;">
+                        ✎</div>
                 </div>
                 <input type="file" id="edit-icon-in" style="display:none" onchange="previewIcon(this)">
             </center>
@@ -773,17 +1096,19 @@ Lưu vào tệp `index.html`.
             </div>
 
             <input type="hidden" id="edit-id"><input type="hidden" id="edit-acc-idx">
-            
-            <button class="btn-main" onclick="saveEdit()" style="margin-top:20px;">LƯU THAY ĐỔI</button>
-            <button class="btn-main" onclick="closeEdit()" style="background:none; color:var(--text-sec); box-shadow:none; margin-top:10px; font-size:13px;">HỦY BỎ</button>
+
+            <button class="btn-main" id="btn-save-edit" onclick="saveEdit(event)" style="margin-top:20px;">LƯU THAY ĐỔI</button>
+            <button class="btn-main" onclick="closeEdit()"
+                style="background:none; color:var(--text-sec); box-shadow:none; margin-top:10px; font-size:13px;">HỦY
+                BỎ</button>
         </div>
     </div>
 
     <script>
         const ACCOUNTS = [
-            { name: "UP file từ 0GB đến 1GB", api: "https://dev.ipadl.workers.dev" },
-            { name: "UP file từ 1GB đến 2.5GB", api: "https://dev.ipadl1.workers.dev" },
-            { name: "UP file từ 2.5GB đến 5GB", api: "https://dev.ipadl2.workers.dev" }
+            { name: "1mb đến 1gb", api: "https://dev.ipadl.workers.dev" },
+            { name: "1gb đến 2.5gb", api: "https://dev.ipadl1.workers.dev" },
+            { name: "2.5gb đén 5gb", api: "https://dev.ipadl2.workers.dev" }
         ];
 
         let PASS = localStorage.getItem("ipa_master_pass") || "";
@@ -802,24 +1127,26 @@ Lưu vào tệp `index.html`.
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('dashboard').style.display = 'block';
             renderTabs();
-            switchTab(0); // Mặc định mở tab đầu tiên
+            const savedTab = localStorage.getItem("ipa_master_tab");
+            switchTab(savedTab ? parseInt(savedTab) : 0);
         }
 
         function renderTabs() {
             const container = document.getElementById('tab-container');
-            container.innerHTML = ACCOUNTS.map((acc, idx) => `
-                <button class="btn-tab" id="tab-btn-\${idx}" onclick="switchTab(\${idx})" 
-                    style="flex:1; min-width:150px; padding:15px; border-radius:18px; border:none; background:var(--card-bg); color:var(--text-sec); font-weight:700; font-size:12px; cursor:pointer; transition:0.3s; backdrop-filter:var(--glass); border:1px solid var(--border);">
+            container.innerHTML = ACCOUNTS.map((acc, idx) => \`
+                <button class="btn-tab" id="tab-btn-\${idx}" onclick="switchTab(\${idx})">
                     \${acc.name}
                 </button>
-            `).join('');
+            \`).join('');
         }
 
         function switchTab(idx) {
+            idx = parseInt(idx);
             currentTabIdx = idx;
+            localStorage.setItem("ipa_master_tab", idx);
             // Cập nhật giao diện nút Tab
             ACCOUNTS.forEach((_, i) => {
-                const btn = document.getElementById(`tab-btn-\${i}`);
+                const btn = document.getElementById(\`tab-btn-\${i}\`);
                 if (i === idx) {
                     btn.style.background = 'var(--primary)';
                     btn.style.color = 'white';
@@ -833,7 +1160,7 @@ Lưu vào tệp `index.html`.
 
             const grid = document.getElementById('account-grid');
             const acc = ACCOUNTS[idx];
-            grid.innerHTML = `
+            grid.innerHTML = \`
                 <div class="acc-block animate" style="max-width: 900px; margin: 0 auto;">
                     <div class="acc-h">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
@@ -852,64 +1179,76 @@ Lưu vào tệp `index.html`.
                         <div class="p-box" style="height:6px; background:rgba(0,0,0,0.03); border-radius:10px; margin-top:20px; display:none; overflow:hidden;" id="p-box-\${idx}"><div style="height:100%; background:var(--primary); width:0%;" id="p-fill-\${idx}"></div></div>
                     </div>
                     <div class="app-list" id="list-\${idx}"></div>
-                </div>`;
-            
+                </div>\`;
+
             // Chỉ load nếu chưa có dữ liệu hoặc force refresh
-            if (!window[`data_\${idx}`]) {
+            if (!window[\`data_\${idx}\`]) {
                 loadData(idx);
             } else {
                 // Hiển thị ngay từ cache (giữ nguyên kết quả tìm kiếm nếu có)
                 const q = document.getElementById('global-search').value;
                 renderApps(idx, q);
                 // Cập nhật lại thanh dung lượng cho chính xác
-                updateStorageUI(idx, window[`storage_\${idx}`]);
+                updateStorageUI(idx, window[\`storage_\${idx}\`]);
             }
         }
 
         async function loadData(idx, force = false) {
-            if (!force && window[`data_\${idx}`]) return;
+            if (!force && window[\`data_\${idx}\`]) return;
 
             const acc = ACCOUNTS[idx];
             try {
-                const s = await (await fetch(`\${acc.api}/storage`, { headers: { "Authorization": PASS } })).json();
-                window[`storage_\${idx}`] = s;
+                const s = await (await fetch(\`\${acc.api}/storage\`, { headers: { "Authorization": PASS } })).json();
+                window[\`storage_\${idx}\`] = s;
                 updateStorageUI(idx, s);
 
-                const apps = await (await fetch(`\${acc.api}/list`, { headers: { "Authorization": PASS } })).json();
-                window[`data_\${idx}`] = apps.sort((a, b) => b.id - a.id);
+                const apps = await (await fetch(\`\${acc.api}/list\`, { headers: { "Authorization": PASS } })).json();
+                window[\`data_\${idx}\`] = apps.sort((a, b) => b.id - a.id);
+
+                // Load global serials
+                try {
+                    const globalSerials = await (await fetch(\`\${acc.api}/serials\`, { headers: { "Authorization": PASS } })).json();
+                    window[\`serialMap_\${idx}\`] = { ...window[\`serialMap_\${idx}\`], ...globalSerials };
+                    localStorage.setItem(\`serialMap_\${idx}\`, JSON.stringify(window[\`serialMap_\${idx}\`]));
+                } catch (e) { }
+
                 renderApps(idx);
-            } catch (e) { document.getElementById(`list-\${idx}`).innerHTML = "<div style='color:var(--danger); text-align:center; padding:50px; font-size:12px; font-weight:800;'>SERVER OFFLINE</div>"; }
+            } catch (e) { document.getElementById(\`list-\${idx}\`).innerHTML = "<div style='color:var(--danger); text-align:center; padding:50px; font-size:12px; font-weight:800;'>SERVER OFFLINE</div>"; }
         }
 
         function updateStorageUI(idx, s) {
             if (!s) return;
             const usedMB = (s.usedBytes / 1024 / 1024).toFixed(1);
-            const txt = document.getElementById(`st-txt-\${idx}`);
-            const fill = document.getElementById(`st-fill-\${idx}`);
-            if (txt) txt.innerText = `\${usedMB} MB / 10 GB`;
+            const txt = document.getElementById(\`st-txt-\${idx}\`);
+            const fill = document.getElementById(\`st-fill-\${idx}\`);
+            if (txt) txt.innerText = \`\${usedMB} MB / 10 GB\`;
             if (fill) fill.style.width = Math.min(100, (s.usedBytes / (10 * 1024 * 1024 * 1024) * 100)) + "%";
         }
 
         function renderApps(idx, q = "") {
-            const list = document.getElementById(`list-\${idx}`);
-            let apps = window[`data_\${idx}`] || [];
-            
+            const list = document.getElementById(\`list-\${idx}\`);
+            let apps = window[\`data_\${idx}\`] || [];
+
             // Tự động khớp Serial dựa trên Cert Name (tích lũy, lưu localStorage)
-            if (!window[`serialMap_\${idx}`]) window[`serialMap_\${idx}`] = JSON.parse(localStorage.getItem(`serialMap_\${idx}`) || '{}');
-            const serialMap = window[`serialMap_\${idx}`];
+            if (!window[\`serialMap_\${idx}\`]) window[\`serialMap_\${idx}\`] = JSON.parse(localStorage.getItem(\`serialMap_\${idx}\`) || '{}');
+            const serialMap = window[\`serialMap_\${idx}\`];
             apps.forEach(a => {
                 if (a.certName && a.certSerial && a.certSerial !== "N/A" && a.certSerial !== "") {
-                    serialMap[a.certName] = a.certSerial;
+                    if (serialMap[a.certName] !== a.certSerial) {
+                        serialMap[a.certName] = a.certSerial;
+                        // Đồng bộ lên server nếu phát hiện serial mới
+                        fetch(\`\${ACCOUNTS[idx].api}/serials\`, { method: 'POST', headers: { "Authorization": PASS }, body: JSON.stringify({ certName: a.certName, certSerial: a.certSerial }) });
+                    }
                 }
             });
-            localStorage.setItem(`serialMap_\${idx}`, JSON.stringify(serialMap));
+            localStorage.setItem(\`serialMap_\${idx}\`, JSON.stringify(serialMap));
 
             if (q) apps = apps.filter(a => a.name.toLowerCase().includes(q.toLowerCase()));
             let h = "";
             apps.forEach(a => {
                 const isRevoked = a.status === 'Bị thu hồi';
                 const displaySerial = (a.certSerial && a.certSerial !== "N/A") ? a.certSerial : (serialMap[a.certName] || "N/A");
-                h += `
+                h += \`
                 <div class="app-item">
                     <div style="display:flex; gap:18px; align-items:center;">
                         <img src="\${a.icon}" class="app-icon">
@@ -932,9 +1271,9 @@ Lưu vào tệp `index.html`.
                         <button class="btn-sm btn-gray" onclick='openEdit(\${idx}, \${JSON.stringify(a).replace(/'/g, "&apos;")})'>Sửa</button>
                         <button class="btn-sm btn-gray" onclick="reup(\${idx}, '\${a.id}')">Update</button>
                         <button class="btn-sm btn-gray" onclick="copy('\${a.ipaLink}')">IPA</button>
-                        <button class="btn-sm btn-red" onclick="del(\${idx}, '\${a.id}')" style="grid-column: span 3; margin-top: 5px;">XÓA ỨNG DỤNG</button>
+                        <button class="btn-sm btn-red" onclick="del(\${idx}, '\${id}')" style="grid-column: span 3; margin-top: 5px;">XÓA ỨNG DỤNG</button>
                     </div>
-                </div>`;
+                </div>\`;
             });
             list.innerHTML = h || "<div style='color:var(--text-sec); text-align:center; padding:40px; font-size:13px; font-weight:600;'>TRỐNG</div>";
         }
@@ -946,9 +1285,9 @@ Lưu vào tệp `index.html`.
         async function upFile(input, idx, appId = null) {
             const file = input.files[0]; if (!file) return;
             const acc = ACCOUNTS[idx];
-            const status = document.getElementById(`status-\${idx}`);
-            const pBox = document.getElementById(`p-box-\${idx}`);
-            const pFill = document.getElementById(`p-fill-\${idx}`);
+            const status = document.getElementById(\`status-\${idx}\`);
+            const pBox = document.getElementById(\`p-box-\${idx}\`);
+            const pFill = document.getElementById(\`p-fill-\${idx}\`);
             pBox.style.display = 'block';
 
             try {
@@ -970,20 +1309,23 @@ Lưu vào tệp `index.html`.
                     const prov = Object.keys(zip.files).find(f => f.endsWith(".app/embedded.mobileprovision"));
                     if (prov) {
                         const content = await zip.file(prov).async("string");
-                        team = content.match(/<key>TeamName<\/key>\\s*<string>([^<]+)<\\/string>/)?.[1] || "Enterprise";
-                        const certMatch = content.match(/<key>DeveloperCertificates<\/key>[\\s\\S]*?<data>([\\s\\S]*?)<\\/data>/);
+                        team = content.match(/<key>TeamName<\\/key>\\s*<string>([^<]+)<\\/string>/)?.[1] || "Enterprise";
+                        const certMatch = content.match(/<key>DeveloperCertificates<\\/key>[\\s\\S]*?<data>([\\s\\S]*?)<\\/data>/);
                         if (certMatch) {
                             serial = extractSerialFromB64(certMatch[1].replace(/\\s/g, ''));
-                            const check = await fetch(`https://cert-checker.trinhtruongphong.workers.dev/?serial=\${serial}`);
-                            const res = await check.json();
-                            if (res.alive === false) appStatus = "Bị thu hồi";
+                            if (!serial && window[\`serialMap_\${idx}\`] && window[\`serialMap_\${idx}\`][team]) serial = window[\`serialMap_\${idx}\`][team];
+                            if (serial) {
+                                const check = await fetch(\`https://cert-checker.trinhtruongphong.workers.dev/?serial=\${serial}\`);
+                                const res = await check.json();
+                                if (res.alive === false) appStatus = "Bị thu hồi";
+                            }
                         }
                     }
                 } catch (err) { console.warn("Lỗi phân tích IPA"); }
 
-                status.innerText = `⚡ ĐANG TẢI LÊN...`;
+                status.innerText = \`⚡ ĐANG TẢI LÊN...\`;
                 const id = appId || Date.now().toString();
-                const startReq = await fetch(`\${acc.api}/upload/start`, { method: 'POST', headers: { "Authorization": PASS }, body: JSON.stringify({ fileName: id + ".ipa" }) });
+                const startReq = await fetch(\`\${acc.api}/upload/start\`, { method: 'POST', headers: { "Authorization": PASS }, body: JSON.stringify({ fileName: id + ".ipa" }) });
                 const start = await startReq.json();
 
                 const chunkSize = 50 * 1024 * 1024; const chunks = Math.ceil(file.size / chunkSize);
@@ -994,19 +1336,19 @@ Lưu vào tệp `index.html`.
                         const i = queue.shift();
                         const chunk = file.slice(i * chunkSize, (i + 1) * chunkSize);
                         try {
-                            const res = await fetch(`\${acc.api}/upload/part?uploadId=\${start.uploadId}&partNumber=\${i + 1}&key=\${start.key}`, { method: 'POST', headers: { "Authorization": PASS }, body: chunk });
+                            const res = await fetch(\`\${acc.api}/upload/part?uploadId=\${start.uploadId}&partNumber=\${i + 1}&key=\${start.key}\`, { method: 'POST', headers: { "Authorization": PASS }, body: chunk });
                             const d = await res.json();
                             parts[i] = { partNumber: i + 1, etag: d.etag };
                             completed++;
                             pFill.style.width = Math.round(completed / chunks * 100) + "%";
-                            status.innerText = `📤 \${Math.round(completed / chunks * 100)}% (\${completed}/\${chunks})`;
+                            status.innerText = \`📤 \${Math.round(completed / chunks * 100)}% (\${completed}/\${chunks})\`;
                         } catch (err) { queue.push(i); await new Promise(r => setTimeout(r, 2000)); }
                     }
                 };
 
                 await Promise.all(Array(8).fill(null).map(uploadWorker));
 
-                await fetch(`\${acc.api}/upload/complete`, {
+                await fetch(\`\${acc.api}/upload/complete\`, {
                     method: 'POST', headers: { "Authorization": PASS },
                     body: JSON.stringify({
                         uploadId: start.uploadId, key: start.key, parts: parts.filter(p => p),
@@ -1020,23 +1362,36 @@ Lưu vào tệp `index.html`.
 
         function previewIcon(i) { const r = new FileReader(); r.onload = (e) => document.getElementById('edit-preview').src = e.target.result; r.readAsDataURL(i.files[0]); }
         function openEdit(idx, a) {
+            const serialMap = window[\`serialMap_\${idx}\`] || {};
             document.getElementById('edit-acc-idx').value = idx; document.getElementById('edit-id').value = a.id;
             document.getElementById('edit-name').value = a.name; document.getElementById('edit-bundleid').value = a.bundleId || "";
             document.getElementById('edit-filename').value = a.fileName; document.getElementById('edit-ipalink').value = a.ipaLink || "";
-            document.getElementById('edit-cert').value = a.certName || ""; document.getElementById('edit-serial').value = a.certSerial || "";
+            document.getElementById('edit-cert').value = a.certName || ""; 
+            document.getElementById('edit-serial').value = (a.certSerial && a.certSerial !== "N/A") ? a.certSerial : (serialMap[a.certName] || "");
             document.getElementById('edit-minos').value = a.minOs || "12.0"; document.getElementById('edit-status').value = a.status || "Hoạt động";
             document.getElementById('edit-preview').src = a.icon; document.getElementById('edit-modal').style.display = 'flex';
         }
         function closeEdit() { document.getElementById('edit-modal').style.display = 'none'; }
-        async function saveEdit() {
-            const idx = document.getElementById('edit-acc-idx').value;
-            const body = { id: document.getElementById('edit-id').value, name: document.getElementById('edit-name').value, bundleId: document.getElementById('edit-bundleid').value, newFileName: document.getElementById('edit-filename').value, ipaLink: document.getElementById('edit-ipalink').value, certName: document.getElementById('edit-cert').value, certSerial: document.getElementById('edit-serial').value, minOs: document.getElementById('edit-minos').value, status: document.getElementById('edit-status').value, newIcon: document.getElementById('edit-preview').src.startsWith('data:') ? document.getElementById('edit-preview').src : "" };
-            await fetch(`\${ACCOUNTS[idx].api}/upload/edit`, { method: 'POST', headers: { "Authorization": PASS, "Content-Type": "application/json" }, body: JSON.stringify(body) });
-            location.reload();
+        async function saveEdit(e) {
+            const btn = e.target;
+            const originalText = btn.innerText;
+            btn.innerText = "ĐANG LƯU...";
+            btn.disabled = true;
+
+            try {
+                const idx = document.getElementById('edit-acc-idx').value;
+                const body = { id: document.getElementById('edit-id').value, name: document.getElementById('edit-name').value, bundleId: document.getElementById('edit-bundleid').value, newFileName: document.getElementById('edit-filename').value, ipaLink: document.getElementById('edit-ipalink').value, certName: document.getElementById('edit-cert').value, certSerial: document.getElementById('edit-serial').value, minOs: document.getElementById('edit-minos').value, status: document.getElementById('edit-status').value, newIcon: document.getElementById('edit-preview').src.startsWith('data:') ? document.getElementById('edit-preview').src : "" };
+                await fetch(\`\${ACCOUNTS[idx].api}/upload/edit\`, { method: 'POST', headers: { "Authorization": PASS, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+                location.reload();
+            } catch (e) {
+                alert("Lỗi khi lưu: " + e.message);
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
         }
-        async function clean() { if (confirm("Dọn rác?")) { for (let i = 0; i < ACCOUNTS.length; i++) await fetch(`\${ACCOUNTS[i].api}/cleanup`, { headers: { "Authorization": PASS } }); location.reload(); } }
+        async function clean() { if (confirm("Dọn rác?")) { for (let i = 0; i < ACCOUNTS.length; i++) await fetch(\`\${ACCOUNTS[i].api}/cleanup\`, { headers: { "Authorization": PASS } }); location.reload(); } }
         function reup(idx, id) { const i = document.createElement('input'); i.type = 'file'; i.accept = '.ipa'; i.onchange = (e) => upFile(i, idx, id); i.click(); }
-        async function del(idx, id) { if (confirm("Xóa vĩnh viễn?")) { await fetch(`\${ACCOUNTS[idx].api}/delete?id=\${id}`, { method: 'DELETE', headers: { "Authorization": PASS } }); loadData(idx, true); } }
+        async function del(idx, id) { if (confirm("Xóa vĩnh viễn?")) { await fetch(\`\${ACCOUNTS[idx].api}/delete?id=\${id}\`, { method: 'DELETE', headers: { "Authorization": PASS } }); loadData(idx, true); } }
         function copy(t) { navigator.clipboard.writeText(t); alert("ĐÃ SAO CHÉP!"); }
 
         function extractSerialFromB64(b64) {
@@ -1052,6 +1407,7 @@ Lưu vào tệp `index.html`.
         }
     </script>
 </body>
+
 </html>
 ```
 </details>
