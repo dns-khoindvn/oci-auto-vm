@@ -88,8 +88,8 @@ export default {
             const fileName = url.pathname.split("/f/")[1];
             const object = await env.MY_BUCKET.get(`files/${fileName}`);
             if (!object) return new Response("Not Found", { status: 404, headers: corsHeaders });
-            return new Response(object.body, { 
-                headers: { "Content-Type": "application/octet-stream", "Content-Length": object.size.toString(), "Accept-Ranges": "bytes", ...corsHeaders } 
+            return new Response(object.body, {
+                headers: { "Content-Type": "application/octet-stream", "Content-Length": object.size.toString(), "Accept-Ranges": "bytes", ...corsHeaders }
             });
         }
 

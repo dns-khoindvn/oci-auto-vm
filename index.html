@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>IPA MASTER - COMMAND CENTER</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <script src="https://unpkg.com/app-info-parser@1.1.4/dist/app-info-parser.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
@@ -22,7 +24,9 @@
         }
 
         * {
-            margin: 0; padding: 0; box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
             font-family: 'Plus Jakarta Sans', sans-serif;
             -webkit-font-smoothing: antialiased;
         }
@@ -35,25 +39,46 @@
         }
 
         .mesh-bg {
-            position: fixed; inset: 0; z-index: -1;
-            background: 
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background:
                 radial-gradient(at 0% 0%, #E3F2FD 0px, transparent 50%),
                 radial-gradient(at 100% 0%, #FCE4EC 0px, transparent 50%),
                 radial-gradient(at 50% 50%, #FFFFFF 0px, transparent 70%);
             background-size: 200% 200%;
             animation: meshMove 15s ease infinite;
         }
+
         @keyframes meshMove {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
         }
 
         @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        .animate { animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+
+        .animate {
+            animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
 
         /* Login */
         #login-screen {
@@ -63,140 +88,346 @@
             backdrop-filter: var(--glass);
             padding: 50px 40px;
             border-radius: 40px;
-            border: 1px solid rgba(255,255,255,0.5);
-            box-shadow: 0 30px 100px rgba(0,0,0,0.05);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 30px 100px rgba(0, 0, 0, 0.05);
             text-align: center;
         }
-        .login-logo { font-size: 38px; font-weight: 800; color: var(--primary); margin-bottom: 5px; letter-spacing: -1.5px; }
-        .login-sub { font-size: 11px; font-weight: 700; color: var(--text-sec); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 40px; }
 
-        input, select {
+        .login-logo {
+            font-size: 38px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 5px;
+            letter-spacing: -1.5px;
+        }
+
+        .login-sub {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-sec);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 40px;
+        }
+
+        input,
+        select {
             width: 100%;
             padding: 15px 20px;
             border-radius: 18px;
             border: 1px solid var(--border);
-            background: rgba(255,255,255,0.6);
+            background: rgba(255, 255, 255, 0.6);
             margin-bottom: 12px;
             font-size: 15px;
             font-weight: 500;
             outline: none;
             transition: 0.3s;
         }
-        input:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1); }
+
+        input:focus {
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
+        }
 
         .btn-main {
-            width: 100%; padding: 18px; border-radius: 20px; border: none;
-            background: var(--primary); color: white; font-weight: 800;
-            cursor: pointer; transition: 0.3s; box-shadow: 0 10px 25px rgba(0, 122, 255, 0.25);
+            width: 100%;
+            padding: 18px;
+            border-radius: 20px;
+            border: none;
+            background: var(--primary);
+            color: white;
+            font-weight: 800;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 10px 25px rgba(0, 122, 255, 0.25);
         }
-        .btn-main:hover { transform: translateY(-2px); filter: brightness(1.1); }
+
+        .btn-main:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
 
         /* Header */
         .header-main {
-            max-width: 1400px; margin: 30px auto;
-            background: var(--card-bg); backdrop-filter: var(--glass);
-            padding: 20px 40px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.5);
-            display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.03);
+            max-width: 1400px;
+            margin: 30px auto;
+            background: var(--card-bg);
+            backdrop-filter: var(--glass);
+            padding: 20px 40px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.03);
         }
 
         .grid-layout {
-            max-width: 1400px; margin: 0 auto;
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
-            gap: 30px; padding-bottom: 50px;
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+            gap: 30px;
+            padding-bottom: 50px;
         }
 
         .acc-block {
-            background: var(--card-bg); backdrop-filter: var(--glass);
-            border-radius: 40px; border: 1px solid rgba(255,255,255,0.5);
-            box-shadow: 0 20px 60px rgba(0,0,0,0.03);
-            display: flex; flex-direction: column;
+            background: var(--card-bg);
+            backdrop-filter: var(--glass);
+            border-radius: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.03);
+            display: flex;
+            flex-direction: column;
         }
 
-        .acc-h { padding: 35px 35px 25px; border-bottom: 1px solid var(--border); }
-        .acc-n { font-size: 19px; font-weight: 800; color: var(--primary); margin-bottom: 15px; }
+        .acc-h {
+            padding: 35px 35px 25px;
+            border-bottom: 1px solid var(--border);
+        }
 
-        .st-b { height: 8px; background: rgba(0,0,0,0.04); border-radius: 10px; margin-bottom: 15px; overflow: hidden; }
-        .st-f { height: 100%; background: var(--primary); width: 0%; transition: 1s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .acc-n {
+            font-size: 19px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        .st-b {
+            height: 8px;
+            background: rgba(0, 0, 0, 0.04);
+            border-radius: 10px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+
+        .st-f {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
 
         .up-z {
-            margin: 20px 35px 30px; padding: 40px 20px;
+            margin: 20px 35px 30px;
+            padding: 40px 20px;
             border: 2px dashed rgba(0, 122, 255, 0.15);
-            border-radius: 25px; text-align: center; cursor: pointer; transition: 0.3s;
+            border-radius: 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
             background: rgba(0, 122, 255, 0.02);
         }
-        .up-z:hover { background: var(--primary-light); border-color: var(--primary); }
+
+        .up-z:hover {
+            background: var(--primary-light);
+            border-color: var(--primary);
+        }
 
         /* App Items */
-        .app-list { padding: 0 25px 35px; }
-        .app-item {
-            background: white; border-radius: 24px; padding: 20px; margin-bottom: 15px;
-            border: 1px solid var(--border); transition: 0.3s;
+        .app-list {
+            padding: 0 25px 35px;
         }
-        .app-item:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.04); }
 
-        .app-icon { width: 64px; height: 64px; border-radius: 16px; object-fit: cover; box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
+        .app-item {
+            background: white;
+            border-radius: 24px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border);
+            transition: 0.3s;
+        }
+
+        .app-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.04);
+        }
+
+        .app-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            object-fit: cover;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
 
         .status-pill {
-            font-size: 10px; padding: 4px 12px; border-radius: 20px; font-weight: 800; text-transform: uppercase;
+            font-size: 10px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 800;
+            text-transform: uppercase;
         }
-        .status-active { background: #E8F5E9; color: var(--success); }
-        .status-revoked { background: #FFEBEE; color: var(--danger); }
 
-        .acts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
-        .btn-sm {
-            padding: 12px 5px; font-size: 10px; font-weight: 800; border-radius: 12px; border: none;
-            cursor: pointer; transition: 0.2s; text-align: center; text-transform: uppercase;
+        .status-active {
+            background: #E8F5E9;
+            color: var(--success);
         }
-        .btn-gray { background: #F2F2F7; color: var(--text-main); }
-        .btn-blue { background: var(--primary-light); color: var(--primary); }
-        .btn-green { background: #E8F5E9; color: var(--success); }
-        .btn-red { background: #FFEBEE; color: var(--danger); }
-        .btn-sm:active { transform: scale(0.95); }
+
+        .status-revoked {
+            background: #FFEBEE;
+            color: var(--danger);
+        }
+
+        .acts {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-sm {
+            padding: 12px 5px;
+            font-size: 10px;
+            font-weight: 800;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .btn-gray {
+            background: #F2F2F7;
+            color: var(--text-main);
+        }
+
+        .btn-blue {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .btn-green {
+            background: #E8F5E9;
+            color: var(--success);
+        }
+
+        .btn-red {
+            background: #FFEBEE;
+            color: var(--danger);
+        }
+
+        .btn-sm:active {
+            transform: scale(0.95);
+        }
 
         /* Modal Redesign */
         #edit-modal {
-            display: none; position: fixed; inset: 0; z-index: 3000;
-            background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(25px);
-            align-items: center; justify-content: center; padding: 20px;
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 3000;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(25px);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
+
         .modal-card {
-            width: 100%; max-width: 600px; background: white; padding: 40px;
-            border-radius: 48px; border: 1px solid var(--border);
-            box-shadow: 0 40px 100px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 600px;
+            background: white;
+            padding: 40px;
+            border-radius: 48px;
+            border: 1px solid var(--border);
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.1);
         }
-        .input-group { text-align: left; margin-bottom: 20px; }
+
+        .input-group {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
         .input-group label {
-            display: block; font-size: 11px; font-weight: 800; color: var(--text-sec);
-            text-transform: uppercase; margin-bottom: 8px; margin-left: 5px; letter-spacing: 1px;
+            display: block;
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--text-sec);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            margin-left: 5px;
+            letter-spacing: 1px;
         }
-        .input-group input, .input-group select { 
-            background: #F2F2F7; border: none; margin-bottom: 0; 
-            font-size: 14px; font-weight: 600;
+
+        .input-group input,
+        .input-group select {
+            background: #F2F2F7;
+            border: none;
+            margin-bottom: 0;
+            font-size: 14px;
+            font-weight: 600;
         }
-        
+
         /* Responsive */
         @media (max-width: 768px) {
-            body { padding: 15px; }
-            .header-main { padding: 15px 20px; flex-direction: column; gap: 15px; text-align: center; }
-            .grid-layout { grid-template-columns: 1fr; gap: 20px; }
-            .acc-h { padding: 25px; }
-            .up-z { margin: 15px 20px 25px; padding: 30px 15px; }
-            .acts { grid-template-columns: 1fr 1fr; }
-            .btn-red { grid-column: span 2 !important; }
-            .modal-card { padding: 30px 20px; border-radius: 35px; }
+            body {
+                padding: 15px;
+            }
+
+            .header-main {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .grid-layout {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .acc-h {
+                padding: 25px;
+            }
+
+            .up-z {
+                margin: 15px 20px 25px;
+                padding: 30px 15px;
+            }
+
+            .acts {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .btn-red {
+                grid-column: span 2 !important;
+            }
+
+            .modal-card {
+                padding: 30px 20px;
+                border-radius: 35px;
+            }
         }
 
         @media (max-width: 480px) {
-            .app-icon { width: 50px; height: 50px; border-radius: 12px; }
-            .app-item { padding: 12px; }
-            .login-logo { font-size: 32px; }
-            .btn-main { padding: 15px; }
+            .app-icon {
+                width: 50px;
+                height: 50px;
+                border-radius: 12px;
+            }
+
+            .app-item {
+                padding: 12px;
+            }
+
+            .login-logo {
+                font-size: 32px;
+            }
+
+            .btn-main {
+                padding: 15px;
+            }
         }
-        
-        ::-webkit-scrollbar { width: 0px; }
+
+        ::-webkit-scrollbar {
+            width: 0px;
+        }
     </style>
 </head>
+
 <body>
     <div class="mesh-bg"></div>
 
@@ -204,7 +435,8 @@
     <div id="login-screen" class="animate">
         <div class="login-logo">IPA MASTER</div>
         <div class="login-sub">Command Center V3.8</div>
-        <input type="password" id="admin-pass" placeholder="MẬT MÃ QUẢN TRỊ" onkeypress="if(event.key==='Enter') login()">
+        <input type="password" id="admin-pass" placeholder="MẬT MÃ QUẢN TRỊ"
+            onkeypress="if(event.key==='Enter') login()">
         <button class="btn-main" onclick="login()">TRUY CẬP HỆ THỐNG</button>
     </div>
 
@@ -213,20 +445,26 @@
         <div class="header-main animate">
             <div style="flex:1;">
                 <div class="logo-txt">BẢNG ĐIỀU KHIỂN</div>
-                <div style="font-size:10px; color:var(--text-sec); font-weight:700; margin-top:5px;">IPA MASTER ELITE</div>
+                <div style="font-size:10px; color:var(--text-sec); font-weight:700; margin-top:5px;">IPA MASTER ELITE
+                </div>
             </div>
-            
+
             <div style="flex:2; margin: 0 20px;">
-                <input type="text" id="global-search" placeholder="TÌM KIẾM TẤT CẢ ỨNG DỤNG..." oninput="globalSearch(this.value)" 
-                       style="margin-bottom:0; background:rgba(0,0,0,0.03); border-radius:15px; padding:12px 25px;">
+                <input type="text" id="global-search" placeholder="TÌM KIẾM TẤT CẢ ỨNG DỤNG..."
+                    oninput="globalSearch(this.value)"
+                    style="margin-bottom:0; background:rgba(0,0,0,0.03); border-radius:15px; padding:12px 25px;">
             </div>
 
             <div style="display:flex; gap:12px; flex:1; justify-content:flex-end;">
-                <button onclick="clean()" style="background:#F2F2F7; border:none; color:var(--text-main); padding:10px 20px; border-radius:12px; font-size:11px; font-weight:800; cursor:pointer;">DỌN RÁC</button>
-                <button onclick="logout()" style="background:var(--danger); border:none; color:#fff; padding:10px 20px; border-radius:12px; font-size:11px; font-weight:800; cursor:pointer;">THOÁT</button>
+                <button onclick="clean()"
+                    style="background:#F2F2F7; border:none; color:var(--text-main); padding:10px 20px; border-radius:12px; font-size:11px; font-weight:800; cursor:pointer;">DỌN
+                    RÁC</button>
+                <button onclick="logout()"
+                    style="background:var(--danger); border:none; color:#fff; padding:10px 20px; border-radius:12px; font-size:11px; font-weight:800; cursor:pointer;">THOÁT</button>
             </div>
         </div>
-        <div class="grid-layout" id="tab-container" style="display:flex; gap:10px; margin: 0 auto 25px; max-width: 1400px; padding: 0 10px; overflow-x: auto;">
+        <div class="grid-layout" id="tab-container"
+            style="display:flex; gap:10px; margin: 0 auto 25px; max-width: 1400px; padding: 0 10px; overflow-x: auto;">
             <!-- Tabs will be injected here -->
         </div>
         <div class="grid-layout" id="account-grid" style="display:block;">
@@ -237,11 +475,16 @@
     <!-- MODAL EDIT REDESIGN -->
     <div id="edit-modal">
         <div class="modal-card animate">
-            <h3 style="font-size:24px; font-weight:800; margin-bottom:35px; text-align:center; letter-spacing:-0.5px;">CHỈNH SỬA ỨNG DỤNG</h3>
+            <h3 style="font-size:24px; font-weight:800; margin-bottom:35px; text-align:center; letter-spacing:-0.5px;">
+                CHỈNH SỬA ỨNG DỤNG</h3>
             <center>
                 <div style="position:relative; width:100px; height:100px; margin-bottom:35px;">
-                    <img id="edit-preview" style="width:100%; height:100%; border-radius:24px; object-fit:cover; border:2px solid var(--primary-light); cursor:pointer;" onclick="document.getElementById('edit-icon-in').click()">
-                    <div style="position:absolute; bottom:-8px; right:-8px; background:var(--primary); color:white; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; border:3px solid white;">✎</div>
+                    <img id="edit-preview"
+                        style="width:100%; height:100%; border-radius:24px; object-fit:cover; border:2px solid var(--primary-light); cursor:pointer;"
+                        onclick="document.getElementById('edit-icon-in').click()">
+                    <div
+                        style="position:absolute; bottom:-8px; right:-8px; background:var(--primary); color:white; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; border:3px solid white;">
+                        ✎</div>
                 </div>
                 <input type="file" id="edit-icon-in" style="display:none" onchange="previewIcon(this)">
             </center>
@@ -263,17 +506,17 @@
             </div>
 
             <input type="hidden" id="edit-id"><input type="hidden" id="edit-acc-idx">
-            
+
             <button class="btn-main" onclick="saveEdit()" style="margin-top:20px;">LƯU THAY ĐỔI</button>
-            <button class="btn-main" onclick="closeEdit()" style="background:none; color:var(--text-sec); box-shadow:none; margin-top:10px; font-size:13px;">HỦY BỎ</button>
+            <button class="btn-main" onclick="closeEdit()"
+                style="background:none; color:var(--text-sec); box-shadow:none; margin-top:10px; font-size:13px;">HỦY
+                BỎ</button>
         </div>
     </div>
 
     <script>
         const ACCOUNTS = [
-            { name: "UP file từ 0GB đến 1GB", api: "https://dev.ipadl.workers.dev" },
-            { name: "UP file từ 1GB đến 2.5GB", api: "https://dev.ipadl1.workers.dev" },
-            { name: "UP file từ 2.5GB đến 5GB", api: "https://dev.ipadl2.workers.dev" }
+            { name: "Main", api: "https://game.ipsv.eu.org" }
         ];
 
         let PASS = localStorage.getItem("ipa_master_pass") || "";
@@ -343,7 +586,7 @@
                     </div>
                     <div class="app-list" id="list-${idx}"></div>
                 </div>`;
-            
+
             // Chỉ load nếu chưa có dữ liệu hoặc force refresh
             if (!window[`data_${idx}`]) {
                 loadData(idx);
@@ -383,14 +626,16 @@
         function renderApps(idx, q = "") {
             const list = document.getElementById(`list-${idx}`);
             let apps = window[`data_${idx}`] || [];
-            
-            // Tự động khớp Serial dựa trên Cert Name
-            const serialMap = {};
+
+            // Tự động khớp Serial dựa trên Cert Name (tích lũy, lưu localStorage)
+            if (!window[`serialMap_${idx}`]) window[`serialMap_${idx}`] = JSON.parse(localStorage.getItem(`serialMap_${idx}`) || '{}');
+            const serialMap = window[`serialMap_${idx}`];
             apps.forEach(a => {
                 if (a.certName && a.certSerial && a.certSerial !== "N/A" && a.certSerial !== "") {
                     serialMap[a.certName] = a.certSerial;
                 }
             });
+            localStorage.setItem(`serialMap_${idx}`, JSON.stringify(serialMap));
 
             if (q) apps = apps.filter(a => a.name.toLowerCase().includes(q.toLowerCase()));
             let h = "";
@@ -502,7 +747,7 @@
                     })
                 });
 
-                pBox.style.display = 'none'; status.innerText = "✅ THÀNH CÔNG!"; setTimeout(() => { status.innerText = "📤 TẢI LÊN IPA MỚI"; }, 3000); loadData(idx);
+                pBox.style.display = 'none'; status.innerText = "✅ THÀNH CÔNG!"; setTimeout(() => { status.innerText = "📤 TẢI LÊN IPA MỚI"; }, 3000); loadData(idx, true);
             } catch (e) { alert("Lỗi: " + e.message); status.innerText = "❌ LỖI!"; pBox.style.display = 'none'; }
         }
 
@@ -524,7 +769,7 @@
         }
         async function clean() { if (confirm("Dọn rác?")) { for (let i = 0; i < ACCOUNTS.length; i++) await fetch(`${ACCOUNTS[i].api}/cleanup`, { headers: { "Authorization": PASS } }); location.reload(); } }
         function reup(idx, id) { const i = document.createElement('input'); i.type = 'file'; i.accept = '.ipa'; i.onchange = (e) => upFile(i, idx, id); i.click(); }
-        async function del(idx, id) { if (confirm("Xóa vĩnh viễn?")) { await fetch(`${ACCOUNTS[idx].api}/delete?id=${id}`, { method: 'DELETE', headers: { "Authorization": PASS } }); loadData(idx); } }
+        async function del(idx, id) { if (confirm("Xóa vĩnh viễn?")) { await fetch(`${ACCOUNTS[idx].api}/delete?id=${id}`, { method: 'DELETE', headers: { "Authorization": PASS } }); loadData(idx, true); } }
         function copy(t) { navigator.clipboard.writeText(t); alert("ĐÃ SAO CHÉP!"); }
 
         function extractSerialFromB64(b64) {
@@ -540,4 +785,5 @@
         }
     </script>
 </body>
+
 </html>

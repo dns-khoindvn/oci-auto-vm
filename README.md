@@ -1,58 +1,69 @@
 # 🍎 IPA MASTER ELITE V3.8 - PREMIUM IPA DISTRIBUTION PLATFORM
 
-![Version](https://img.shields.io/badge/Version-3.8-blue?style=for-the-badge)
-![UI](https://img.shields.io/badge/Design-Modern_Glass--Light-FF69B4?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-3.8_Elite-blue?style=for-the-badge)
+![UI](https://img.shields.io/badge/Design-Luxury_Glassmorphism-FF69B4?style=for-the-badge)
 ![Backend](https://img.shields.io/badge/Platform-Cloudflare_Workers-F38020?style=for-the-badge&logo=cloudflare)
 
-**IPA MASTER ELITE** là một hệ thống quản lý và phân phối tệp IPA chuyên nghiệp dành cho iOS/iPadOS. Dự án được tối ưu hóa với giao diện **Modern Glass-Light** cực kỳ sang trọng, tích hợp các tính năng thông minh giúp tối ưu hóa trải nghiệm người dùng quốc tế.
+**IPA MASTER ELITE** là giải pháp phân phối ứng dụng iOS chuyên nghiệp, được thiết kế với triết lý thẩm mỹ cao cấp (**Luxury Glassmorphism**) và hiệu năng xử lý dữ liệu quy mô lớn. Hệ thống cho phép quản lý và cài đặt ứng dụng OTA (Over-The-Air) với độ ổn định tuyệt đối và tốc độ vượt trội.
 
 ---
 
-## ✨ Tính năng nổi bật
+## ✨ Tính năng "Elite" Độc quyền
 
-### 🎨 Giao diện & Trải nghiệm (UI/UX)
-- **Modern Glass-Light Design**: Hiệu ứng kính mờ, nền Mesh Gradient chuyển động 15 giây mượt mà.
-- **Responsive Toàn diện**: Hoạt động hoàn hảo trên iPhone, iPad và PC.
-- **Hiệu ứng Entrance**: Animation fade-in khi tải trang mang lại cảm giác cao cấp.
-- **Song ngữ Anh-Việt**: Tự động hiển thị thông báo cài đặt song ngữ.
+### 🛠️ Quản trị tối tân (Advanced Command Center)
+- **Multi-Server Architecture**: Hệ thống Tab giúp quản lý nhiều server R2 cùng lúc, phân loại upload theo dung lượng (0-1GB, 1-2.5GB, 2.5-5GB+).
+- **8x Parallel Chunked Uploads**: Sử dụng cơ chế R2 Multipart Upload kết hợp 8 luồng tải lên song song, giúp upload các file IPA cực lớn (lên đến 5GB) nhanh chóng và ổn định.
+- **Auto Metadata Parsing**: Tự động trích xuất thông tin từ tệp IPA (Tên, Bundle ID, Phiên bản, Icon, iOS yêu cầu) ngay khi chọn file.
+- **Precision Certificate extraction**: Trực tiếp phân tích tệp `embedded.mobileprovision` để lấy **Serial Number** của chứng chỉ, giúp theo dõi trạng thái thu hồi chính xác 100%.
+- **Smart Serial Memory**: Tự động ghi nhớ và gán Serial cho các chứng chỉ cùng tên, tiết kiệm thời gian quản trị.
 
-### 🛡️ Tính năng Thông minh
-- **Auto Device Detection**: Tự động nhận diện thiết bị iOS và cảnh báo nếu người dùng dùng hệ điều hành khác.
-- **iOS Compatibility Check**: Tự động so sánh phiên bản iOS của người dùng với yêu cầu tối thiểu của App (`minOs`).
-- **Cert Status Tracking**: Kiểm tra trạng thái chứng chỉ (Revoke) thời gian thực qua Serial Number.
-- **Shortlink Integration**: Tự động tạo và sao chép link rút gọn `is.gd`.
+### 🛡️ Hệ thống Theo dõi & Bảo mật
+- **Auto-Revocation Monitoring**: Tự động kiểm tra trạng thái chứng chỉ theo thời gian thực. Nếu chứng chỉ bị Apple thu hồi, hệ thống sẽ tự động cập nhật trạng thái "Bị thu hồi" trên toàn bộ giao diện người dùng.
+- **Smart Error Handling**: Phân biệt chính xác giữa lỗi xác thực (401), lỗi server offline và lỗi dung lượng.
+- **Cleanup & Maintenance**: Tính năng "Dọn rác" thông minh giúp xóa các tệp mồ côi trong bộ nhớ R2, tối ưu hóa chi phí lưu trữ.
 
-### ⚙️ Quản trị (Admin Panel)
-- **Tabbed Dashboard**: Quản lý nhiều máy chủ (Server) qua hệ thống Tab cực kỳ gọn gàng.
-- **Chunked Upload 5GB**: Hỗ trợ tải lên các tệp IPA khổng lồ qua Cloudflare R2 (vượt giới hạn 100MB của Worker).
-- **Smart Caching**: Tiết kiệm tối đa Request Cloudflare bằng cơ chế lưu trữ dữ liệu tạm thời tại trình duyệt.
-- **Global Search**: Tìm kiếm ứng dụng tức thì trên tất cả các máy chủ.
+### 🎨 Giao diện Luxury Glassmorphism
+- **Premium Aesthetics**: Hình nền Mesh Gradient động, hiệu ứng Blur Glass (blur 30px), và font chữ "Plus Jakarta Sans" hiện đại.
+- **Real-time Analytics**: Hiển thị số lượt cài đặt OTA và lượt tải tệp IPA trực tiếp trên giao diện người dùng.
+- **Device Compatibility Check**: Tự động kiểm tra phiên bản iOS của người dùng để cảnh báo nếu thiết bị không tương thích với ứng dụng.
 
 ---
 
 ## 🚀 Hướng dẫn cài đặt (Installation Guide)
 
-### Bước 1: Chuẩn bị trên Cloudflare
-1. Đăng nhập vào **Cloudflare Dashboard**.
-2. Vào mục **R2 Storage** -> Tạo một Bucket mới (Ví dụ: `ipa-bucket`).
-3. Vào mục **Workers & Pages** -> Tạo một Worker mới.
-
-### Bước 2: Cấu hình Worker
-1. Truy cập vào Worker đã tạo -> **Settings** -> **Variables**.
-2. Thêm **R2 Bucket Binding**: Đặt tên biến là `MY_BUCKET` và chọn Bucket đã tạo ở Bước 1.
+### 1. Chuẩn bị trên Cloudflare
+1. Tạo một **R2 Bucket** (Ví dụ: `ipa-storage`).
+2. Tạo một **Worker** mới và liên kết (Bind) R2 Bucket vào Worker với tên biến là `MY_BUCKET`.
 3. Thêm các biến môi trường (Environment Variables):
-   - `PASS`: Mật mã quản trị (Dùng để đăng nhập Dashboard).
-   - `DOMAIN`: Tên miền của bạn (Ví dụ: `ipa.domain.com`).
+   - `ACCESS_PASSWORD`: Mật mã đăng nhập trang quản trị.
+   - `WEB_DOMAIN`: Tên miền của bạn (Ví dụ: `ipa.khoindvn.io.vn`).
 
-### Bước 3: Triển khai mã nguồn
-Copy toàn bộ nội dung tệp `worker.js` và dán vào trình soạn thảo mã của Cloudflare Worker, sau đó nhấn **Save and Deploy**.
+### 2. Cấu hình Backend
+- Copy nội dung tệp `worker.js` vào trình chỉnh sửa Worker trên Cloudflare và nhấn **Deploy**.
+
+### 3. Cấu hình Frontend
+- Tệp `index.html` là trang quản trị. Bạn có thể lưu vào GitHub Pages hoặc mở trực tiếp từ máy tính.
+- Đảm bảo cấu hình hằng số `ACCOUNTS` trong `index.html` khớp với URL các Worker của bạn.
 
 ---
 
-## 🛠️ Cấu trúc mã nguồn
+---
+
+## 🛠️ Cấu trúc hệ thống
+
+| Thành phần | Công nghệ | Vai trò |
+| :--- | :--- | :--- |
+| **Storage** | Cloudflare R2 | Lưu trữ tệp IPA và Metadata (.json) |
+| **Backend** | Cloudflare Workers | Xử lý API, Streaming dữ liệu, Check Revoke |
+| **Frontend** | Vanilla JS, CSS Glass | Giao diện quản trị và trang View người dùng |
+| **Security** | Auth Headers | Bảo vệ API bằng mật khẩu mã hóa |
+
+---
+
+## 💻 Mã nguồn (Source Code)
 
 ### 1. Backend (Cloudflare Worker)
-Lưu vào tệp `worker.js`. Đây là trái tim của hệ thống, xử lý API, Metadata và Render trang tải xuống.
+Lưu vào tệp `worker.js`.
 
 <details>
 <summary>Xem mã nguồn worker.js</summary>
@@ -148,8 +159,8 @@ export default {
             const fileName = url.pathname.split("/f/")[1];
             const object = await env.MY_BUCKET.get(`files/${fileName}`);
             if (!object) return new Response("Not Found", { status: 404, headers: corsHeaders });
-            return new Response(object.body, { 
-                headers: { "Content-Type": "application/octet-stream", "Content-Length": object.size.toString(), "Accept-Ranges": "bytes", ...corsHeaders } 
+            return new Response(object.body, {
+                headers: { "Content-Type": "application/octet-stream", "Content-Length": object.size.toString(), "Accept-Ranges": "bytes", ...corsHeaders }
             });
         }
 
@@ -491,7 +502,7 @@ async function trackRequest(env) {
 </details>
 
 ### 2. Admin Dashboard (Frontend)
-Lưu vào tệp `index.html`. Bạn có thể chạy tệp này trực tiếp trên máy tính hoặc tải lên một hosting tĩnh.
+Lưu vào tệp `index.html`.
 
 <details>
 <summary>Xem mã nguồn index.html</summary>
@@ -808,7 +819,7 @@ Lưu vào tệp `index.html`. Bạn có thể chạy tệp này trực tiếp tr
             currentTabIdx = idx;
             // Cập nhật giao diện nút Tab
             ACCOUNTS.forEach((_, i) => {
-                const btn = document.getElementById(\`tab-btn-\${i}\`);
+                const btn = document.getElementById(`tab-btn-\${i}`);
                 if (i === idx) {
                     btn.style.background = 'var(--primary)';
                     btn.style.color = 'white';
@@ -844,52 +855,54 @@ Lưu vào tệp `index.html`. Bạn có thể chạy tệp này trực tiếp tr
                 </div>`;
             
             // Chỉ load nếu chưa có dữ liệu hoặc force refresh
-            if (!window[\`data_\${idx}\`]) {
+            if (!window[`data_\${idx}`]) {
                 loadData(idx);
             } else {
                 // Hiển thị ngay từ cache (giữ nguyên kết quả tìm kiếm nếu có)
                 const q = document.getElementById('global-search').value;
                 renderApps(idx, q);
                 // Cập nhật lại thanh dung lượng cho chính xác
-                updateStorageUI(idx, window[\`storage_\${idx}\`]);
+                updateStorageUI(idx, window[`storage_\${idx}`]);
             }
         }
 
         async function loadData(idx, force = false) {
-            if (!force && window[\`data_\${idx}\`]) return;
+            if (!force && window[`data_\${idx}`]) return;
 
             const acc = ACCOUNTS[idx];
             try {
-                const s = await (await fetch(\`\${acc.api}/storage\`, { headers: { "Authorization": PASS } })).json();
-                window[\`storage_\${idx}\`] = s;
+                const s = await (await fetch(`\${acc.api}/storage`, { headers: { "Authorization": PASS } })).json();
+                window[`storage_\${idx}`] = s;
                 updateStorageUI(idx, s);
 
-                const apps = await (await fetch(\`\${acc.api}/list\`, { headers: { "Authorization": PASS } })).json();
-                window[\`data_\${idx}\`] = apps.sort((a, b) => b.id - a.id);
+                const apps = await (await fetch(`\${acc.api}/list`, { headers: { "Authorization": PASS } })).json();
+                window[`data_\${idx}`] = apps.sort((a, b) => b.id - a.id);
                 renderApps(idx);
-            } catch (e) { document.getElementById(\`list-\${idx}\`).innerHTML = "<div style='color:var(--danger); text-align:center; padding:50px; font-size:12px; font-weight:800;'>SERVER OFFLINE</div>"; }
+            } catch (e) { document.getElementById(`list-\${idx}`).innerHTML = "<div style='color:var(--danger); text-align:center; padding:50px; font-size:12px; font-weight:800;'>SERVER OFFLINE</div>"; }
         }
 
         function updateStorageUI(idx, s) {
             if (!s) return;
             const usedMB = (s.usedBytes / 1024 / 1024).toFixed(1);
-            const txt = document.getElementById(\`st-txt-\${idx}\`);
-            const fill = document.getElementById(\`st-fill-\${idx}\`);
-            if (txt) txt.innerText = \`\${usedMB} MB / 10 GB\`;
+            const txt = document.getElementById(`st-txt-\${idx}`);
+            const fill = document.getElementById(`st-fill-\${idx}`);
+            if (txt) txt.innerText = `\${usedMB} MB / 10 GB`;
             if (fill) fill.style.width = Math.min(100, (s.usedBytes / (10 * 1024 * 1024 * 1024) * 100)) + "%";
         }
 
         function renderApps(idx, q = "") {
-            const list = document.getElementById(\`list-\${idx}\`);
-            let apps = window[\`data_\${idx}\`] || [];
+            const list = document.getElementById(`list-\${idx}`);
+            let apps = window[`data_\${idx}`] || [];
             
-            // Tự động khớp Serial dựa trên Cert Name
-            const serialMap = {};
+            // Tự động khớp Serial dựa trên Cert Name (tích lũy, lưu localStorage)
+            if (!window[`serialMap_\${idx}`]) window[`serialMap_\${idx}`] = JSON.parse(localStorage.getItem(`serialMap_\${idx}`) || '{}');
+            const serialMap = window[`serialMap_\${idx}`];
             apps.forEach(a => {
                 if (a.certName && a.certSerial && a.certSerial !== "N/A" && a.certSerial !== "") {
                     serialMap[a.certName] = a.certSerial;
                 }
             });
+            localStorage.setItem(`serialMap_\${idx}`, JSON.stringify(serialMap));
 
             if (q) apps = apps.filter(a => a.name.toLowerCase().includes(q.toLowerCase()));
             let h = "";
@@ -933,9 +946,9 @@ Lưu vào tệp `index.html`. Bạn có thể chạy tệp này trực tiếp tr
         async function upFile(input, idx, appId = null) {
             const file = input.files[0]; if (!file) return;
             const acc = ACCOUNTS[idx];
-            const status = document.getElementById(\`status-\${idx}\`);
-            const pBox = document.getElementById(\`p-box-\${idx}\`);
-            const pFill = document.getElementById(\`p-fill-\${idx}\`);
+            const status = document.getElementById(`status-\${idx}`);
+            const pBox = document.getElementById(`p-box-\${idx}`);
+            const pFill = document.getElementById(`p-fill-\${idx}`);
             pBox.style.display = 'block';
 
             try {
@@ -957,20 +970,20 @@ Lưu vào tệp `index.html`. Bạn có thể chạy tệp này trực tiếp tr
                     const prov = Object.keys(zip.files).find(f => f.endsWith(".app/embedded.mobileprovision"));
                     if (prov) {
                         const content = await zip.file(prov).async("string");
-                        team = content.match(/<key>TeamName<\/key>\\s*<string>([^<]+)<\/string>/)?.[1] || "Enterprise";
-                        const certMatch = content.match(/<key>DeveloperCertificates<\/key>[\\s\\S]*?<data>([\\s\\S]*?)<\/data>/);
+                        team = content.match(/<key>TeamName<\/key>\\s*<string>([^<]+)<\\/string>/)?.[1] || "Enterprise";
+                        const certMatch = content.match(/<key>DeveloperCertificates<\/key>[\\s\\S]*?<data>([\\s\\S]*?)<\\/data>/);
                         if (certMatch) {
                             serial = extractSerialFromB64(certMatch[1].replace(/\\s/g, ''));
-                            const check = await fetch(\`https://cert-checker.trinhtruongphong.workers.dev/?serial=\${serial}\`);
+                            const check = await fetch(`https://cert-checker.trinhtruongphong.workers.dev/?serial=\${serial}`);
                             const res = await check.json();
                             if (res.alive === false) appStatus = "Bị thu hồi";
                         }
                     }
                 } catch (err) { console.warn("Lỗi phân tích IPA"); }
 
-                status.innerText = \`⚡ ĐANG TẢI LÊN...\`;
+                status.innerText = `⚡ ĐANG TẢI LÊN...`;
                 const id = appId || Date.now().toString();
-                const startReq = await fetch(\`\${acc.api}/upload/start\`, { method: 'POST', headers: { "Authorization": PASS }, body: JSON.stringify({ fileName: id + ".ipa" }) });
+                const startReq = await fetch(`\${acc.api}/upload/start`, { method: 'POST', headers: { "Authorization": PASS }, body: JSON.stringify({ fileName: id + ".ipa" }) });
                 const start = await startReq.json();
 
                 const chunkSize = 50 * 1024 * 1024; const chunks = Math.ceil(file.size / chunkSize);
@@ -981,19 +994,19 @@ Lưu vào tệp `index.html`. Bạn có thể chạy tệp này trực tiếp tr
                         const i = queue.shift();
                         const chunk = file.slice(i * chunkSize, (i + 1) * chunkSize);
                         try {
-                            const res = await fetch(\`\${acc.api}/upload/part?uploadId=\${start.uploadId}&partNumber=\${i + 1}&key=\${start.key}\`, { method: 'POST', headers: { "Authorization": PASS }, body: chunk });
+                            const res = await fetch(`\${acc.api}/upload/part?uploadId=\${start.uploadId}&partNumber=\${i + 1}&key=\${start.key}`, { method: 'POST', headers: { "Authorization": PASS }, body: chunk });
                             const d = await res.json();
                             parts[i] = { partNumber: i + 1, etag: d.etag };
                             completed++;
                             pFill.style.width = Math.round(completed / chunks * 100) + "%";
-                            status.innerText = \`📤 \${Math.round(completed / chunks * 100)}% (\${completed}/\${chunks})\`;
+                            status.innerText = `📤 \${Math.round(completed / chunks * 100)}% (\${completed}/\${chunks})`;
                         } catch (err) { queue.push(i); await new Promise(r => setTimeout(r, 2000)); }
                     }
                 };
 
                 await Promise.all(Array(8).fill(null).map(uploadWorker));
 
-                await fetch(\`\${acc.api}/upload/complete\`, {
+                await fetch(`\${acc.api}/upload/complete`, {
                     method: 'POST', headers: { "Authorization": PASS },
                     body: JSON.stringify({
                         uploadId: start.uploadId, key: start.key, parts: parts.filter(p => p),
@@ -1001,7 +1014,7 @@ Lưu vào tệp `index.html`. Bạn có thể chạy tệp này trực tiếp tr
                     })
                 });
 
-                pBox.style.display = 'none'; status.innerText = "✅ THÀNH CÔNG!"; setTimeout(() => { status.innerText = "📤 TẢI LÊN IPA MỚI"; }, 3000); loadData(idx);
+                pBox.style.display = 'none'; status.innerText = "✅ THÀNH CÔNG!"; setTimeout(() => { status.innerText = "📤 TẢI LÊN IPA MỚI"; }, 3000); loadData(idx, true);
             } catch (e) { alert("Lỗi: " + e.message); status.innerText = "❌ LỖI!"; pBox.style.display = 'none'; }
         }
 
@@ -1018,12 +1031,12 @@ Lưu vào tệp `index.html`. Bạn có thể chạy tệp này trực tiếp tr
         async function saveEdit() {
             const idx = document.getElementById('edit-acc-idx').value;
             const body = { id: document.getElementById('edit-id').value, name: document.getElementById('edit-name').value, bundleId: document.getElementById('edit-bundleid').value, newFileName: document.getElementById('edit-filename').value, ipaLink: document.getElementById('edit-ipalink').value, certName: document.getElementById('edit-cert').value, certSerial: document.getElementById('edit-serial').value, minOs: document.getElementById('edit-minos').value, status: document.getElementById('edit-status').value, newIcon: document.getElementById('edit-preview').src.startsWith('data:') ? document.getElementById('edit-preview').src : "" };
-            await fetch(\`\${ACCOUNTS[idx].api}/upload/edit\`, { method: 'POST', headers: { "Authorization": PASS, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+            await fetch(`\${ACCOUNTS[idx].api}/upload/edit`, { method: 'POST', headers: { "Authorization": PASS, "Content-Type": "application/json" }, body: JSON.stringify(body) });
             location.reload();
         }
-        async function clean() { if (confirm("Dọn rác?")) { for (let i = 0; i < ACCOUNTS.length; i++) await fetch(\`\${ACCOUNTS[i].api}/cleanup\`, { headers: { "Authorization": PASS } }); location.reload(); } }
+        async function clean() { if (confirm("Dọn rác?")) { for (let i = 0; i < ACCOUNTS.length; i++) await fetch(`\${ACCOUNTS[i].api}/cleanup`, { headers: { "Authorization": PASS } }); location.reload(); } }
         function reup(idx, id) { const i = document.createElement('input'); i.type = 'file'; i.accept = '.ipa'; i.onchange = (e) => upFile(i, idx, id); i.click(); }
-        async function del(idx, id) { if (confirm("Xóa vĩnh viễn?")) { await fetch(\`\${ACCOUNTS[idx].api}/delete?id=\${id}\`, { method: 'DELETE', headers: { "Authorization": PASS } }); loadData(idx); } }
+        async function del(idx, id) { if (confirm("Xóa vĩnh viễn?")) { await fetch(`\${ACCOUNTS[idx].api}/delete?id=\${id}`, { method: 'DELETE', headers: { "Authorization": PASS } }); loadData(idx, true); } }
         function copy(t) { navigator.clipboard.writeText(t); alert("ĐÃ SAO CHÉP!"); }
 
         function extractSerialFromB64(b64) {
@@ -1045,22 +1058,8 @@ Lưu vào tệp `index.html`. Bạn có thể chạy tệp này trực tiếp tr
 
 ---
 
-## 📝 Hướng dẫn sử dụng Dashboard
-1. Mở tệp `index.html` trong trình duyệt.
-2. Nhập `PASS` (Mật mã quản trị bạn đã đặt trong Worker) để đăng nhập.
-3. Chọn Server phù hợp với dung lượng file bạn muốn up.
-4. Nhấn **"TẢI LÊN IPA MỚI"** và chờ hệ thống phân tích, tải lên tự động.
-5. Sau khi up xong, nhấn **"Sửa"** để cập nhật Cert hoặc lấy Link chia sẻ.
+## 📸 Screenshots & Demo
+*(Hãy cập nhật hình ảnh thực tế của bạn tại đây)*
 
 ---
-
-## 📜 Giấy phép & Tác giả
-- **Phát triển bởi**: IPA MASTER Team.
-- **Ngôn ngữ**: Javascript (Worker), HTML/CSS (Vanilla).
-- **Bản quyền**: Tự do sử dụng cho mục đích cá nhân.
-
-> [!IMPORTANT]
-> Hãy đảm bảo bạn đã cấu hình đúng **CORS** trong cài đặt R2 Bucket để Dashboard có thể tải lên tệp thành công.
-
----
-*Chúc bạn có những trải nghiệm tuyệt vời cùng IPA MASTER ELITE!*
+*Phát triển bởi đội ngũ đam mê công nghệ. Chúc bạn có trải nghiệm tuyệt vời cùng IPA MASTER ELITE!*
