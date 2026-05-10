@@ -47,8 +47,6 @@
 
 ---
 
----
-
 ## 🛠️ Cấu trúc hệ thống
 
 | Thành phần | Công nghệ | Vai trò |
@@ -64,9 +62,6 @@
 
 ### 1. Backend (Cloudflare Worker)
 Lưu vào tệp `worker.js`.
-
-<details>
-<summary>Xem mã nguồn worker.js</summary>
 
 ```javascript
 const corsHeaders = {
@@ -296,7 +291,7 @@ async function getRevokeStatus(serial, env) {
 function generatePlist(app, host) {
     return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0"><dict><key>items</key><array><dict><key>assets</key><array><dict><key>kind</key><string>software-package</string><key>url</key><string>\${host}/f/\${app.fileName}</string></dict></array><key>metadata</key><dict><key>bundle-identifier</key><string>\${app.bundleId}</string><key>bundle-version</key><string>\${app.version}</string><key>kind</key><string>software</string><key>title</key><string>\${app.name}</string></dict></dict></array></dict></plist>`;
+<plist version="1.0"><dict><key>items</key><array><dict><key>assets</key><array><dict><key>kind</key><string>software-package</string><key>url</key><string>${host}/f/${app.fileName}</string></dict></array><key>metadata</key><dict><key>bundle-identifier</key><string>${app.bundleId}</string><key>bundle-version</key><string>${app.version}</string><key>kind</key><string>software</string><key>title</key><string>${app.name}</string></dict></dict></array></dict></plist>`;
 }
 
 function generateV32View(app, host, status, statusColor) {
@@ -531,13 +526,9 @@ async function trackRequest(env) {
     } catch (e) { }
 }
 ```
-</details>
 
 ### 2. Admin Dashboard (Frontend)
 Lưu vào tệp `index.html`.
-
-<details>
-<summary>Xem mã nguồn index.html</summary>
 
 ```html
 <!DOCTYPE html>
@@ -1133,11 +1124,11 @@ Lưu vào tệp `index.html`.
 
         function renderTabs() {
             const container = document.getElementById('tab-container');
-            container.innerHTML = ACCOUNTS.map((acc, idx) => \`
+            container.innerHTML = ACCOUNTS.map((acc, idx) => `
                 <button class="btn-tab" id="tab-btn-\${idx}" onclick="switchTab(\${idx})">
                     \${acc.name}
                 </button>
-            \`).join('');
+            `).join('');
         }
 
         function switchTab(idx) {
@@ -1271,7 +1262,7 @@ Lưu vào tệp `index.html`.
                         <button class="btn-sm btn-gray" onclick='openEdit(\${idx}, \${JSON.stringify(a).replace(/'/g, "&apos;")})'>Sửa</button>
                         <button class="btn-sm btn-gray" onclick="reup(\${idx}, '\${a.id}')">Update</button>
                         <button class="btn-sm btn-gray" onclick="copy('\${a.ipaLink}')">IPA</button>
-                        <button class="btn-sm btn-red" onclick="del(\${idx}, '\${id}')" style="grid-column: span 3; margin-top: 5px;">XÓA ỨNG DỤNG</button>
+                        <button class="btn-sm btn-red" onclick="del(\${idx}, '\${a.id}')" style="grid-column: span 3; margin-top: 5px;">XÓA ỨNG DỤNG</button>
                     </div>
                 </div>\`;
             });
@@ -1409,13 +1400,3 @@ Lưu vào tệp `index.html`.
 </body>
 
 </html>
-```
-</details>
-
----
-
-## 📸 Screenshots & Demo
-*(Hãy cập nhật hình ảnh thực tế của bạn tại đây)*
-
----
-*Phát triển bởi đội ngũ đam mê công nghệ. Chúc bạn có trải nghiệm tuyệt vời cùng IPA MASTER ELITE!*
