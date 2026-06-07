@@ -52,3 +52,79 @@ jobs:
           wrangler kv key put --namespace-id=$KV_NAMESPACE_ID "ca.pem" --path="$FULLCHAIN_PATH"
           
           echo "Đã cập nhật chứng chỉ ZeroSSL lên Cloudflare KV thành công!"
+
+      - name: Upload Certificates as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: muacert_ssl_certificates
+          path: ~/.acme.sh/muacert.com_ecc/
+          retention-days: 7
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install node-forge
+        run: npm install node-forge
+
+      - name: Sign Mobileconfig Profile
+        run: |
+          CERT_PATH=~/.acme.sh/muacert.com_ecc/muacert.com.cer
+          KEY_PATH=~/.acme.sh/muacert.com_ecc/muacert.com.key
+          FULLCHAIN_PATH=~/.acme.sh/muacert.com_ecc/fullchain.cer
+          
+          cat << 'EOF' > sign_profile.js
+          const fs = require('fs');
+          const forge = require('node-forge');
+
+          const certPem = fs.readFileSync(process.argv[2], 'utf8');
+          const keyPem = fs.readFileSync(process.argv[3], 'utf8');
+          const caPem = fs.readFileSync(process.argv[4], 'utf8');
+          const unsignedProfile = fs.readFileSync('udid_unsigned.mobileconfig', 'utf8');
+
+          const p7 = forge.pkcs7.createSignedData();
+          p7.content = forge.util.createBuffer(unsignedProfile, 'utf8');
+          
+          const cert = forge.pki.certificateFromPem(certPem);
+          const privateKey = forge.pki.privateKeyFromPem(keyPem);
+          
+          p7.addCertificate(cert);
+          if (caPem) {
+              const caCert = forge.pki.certificateFromPem(caPem);
+              p7.addCertificate(caCert);
+          }
+          
+          p7.addSigner({
+            key: privateKey,
+            certificate: cert,
+            digestAlgorithm: forge.pki.oids.sha256,
+            authenticatedAttributes: [
+              { type: forge.pki.oids.contentType, value: forge.pki.oids.data },
+              { type: forge.pki.oids.messageDigest },
+              { type: forge.pki.oids.signingTime }
+            ]
+          });
+
+          p7.sign();
+          const signedDer = forge.asn1.toDer(p7.toAsn1()).getBytes();
+          
+          const buffer = Buffer.alloc(signedDer.length);
+          for (let i = 0; i < signedDer.length; i++) {
+              buffer[i] = signedDer.charCodeAt(i);
+          }
+          
+          fs.writeFileSync('udid.mobileconfig', buffer);
+          EOF
+          
+          node sign_profile.js "$CERT_PATH" "$KEY_PATH" "$FULLCHAIN_PATH"
+
+      - name: Upload Signed Profile as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed_mobileconfig
+          path: udid.mobileconfig
+          retention-days: 7
