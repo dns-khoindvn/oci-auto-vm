@@ -4,6 +4,8 @@ on:
   schedule:
     - cron: '0 0 1 */2 *' # Chạy 2 tháng 1 lần (ZeroSSL có hạn 90 ngày)
   workflow_dispatch: # Cho phép chạy thủ công
+  repository_dispatch:
+    types: [renew-ssl] # Cho phép Cloudflare Pages gọi qua API
 
 jobs:
   renew-and-update:
@@ -14,18 +16,22 @@ jobs:
           curl https://get.acme.sh | sh -s email=admin@muacert.com
           echo "$HOME/.acme.sh" >> $GITHUB_PATH
 
+      - name: Set Default CA to ZeroSSL
+        run: |
+          ~/.acme.sh/acme.sh --set-default-ca --server zerossl
+
       - name: Register ZeroSSL Account
         env:
           ZEROSSL_EMAIL: ${{ secrets.ZEROSSL_EMAIL }}
         run: |
-          ~/.acme.sh/acme.sh --register-account -m $ZEROSSL_EMAIL --server zerossl
+          ~/.acme.sh/acme.sh --register-account -m $ZEROSSL_EMAIL
 
       - name: Issue ZeroSSL Certificate via Cloudflare DNS
         env:
           CF_Token: ${{ secrets.CF_API_TOKEN }}
           CF_Account_ID: ${{ secrets.CF_ACCOUNT_ID }}
         run: |
-          ~/.acme.sh/acme.sh --issue --dns dns_cf -d muacert.com --server zerossl
+          ~/.acme.sh/acme.sh --issue --dns dns_cf -d muacert.com
 
       - name: Install Wrangler
         run: npm install -g wrangler
