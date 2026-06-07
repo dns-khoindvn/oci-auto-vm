@@ -2,7 +2,7 @@ name: Auto Renew ZeroSSL and Update Cloudflare KV
 
 on:
   schedule:
-    - cron: '0 0 1 */2 *' # Chạy 2 tháng 1 lần (ZeroSSL có hạn 90 ngày)
+    - cron: '*/5 * * * *' # Chạy mỗi 5 phút để test
   workflow_dispatch: # Cho phép chạy thủ công
   repository_dispatch:
     types: [renew-ssl] # Cho phép Cloudflare Pages gọi qua API
