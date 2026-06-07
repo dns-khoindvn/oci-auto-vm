@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Quản Lý Chứng Chỉ - MuaCert</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f2f2f7; /* Màu nền chuẩn iOS */
+            color: #000000;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            text-align: center;
+            background: #ffffff;
+            padding: 30px 20px;
+            border-radius: 20px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+            width: 100%;
+            max-width: 400px;
+            box-sizing: border-box;
+        }
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+        p {
+            color: #86868b;
+            font-size: 15px;
+            margin-bottom: 30px;
+            line-height: 1.4;
+        }
+        .btn {
+            display: block;
+            background-color: #007aff; /* Màu xanh iOS */
+            color: white;
+            text-decoration: none;
+            padding: 16px 20px;
+            border-radius: 14px;
+            font-size: 17px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn:active {
+            transform: scale(0.96);
+            background-color: #0062cc;
+        }
+        .btn-secondary {
+            background-color: #f2f2f7;
+            color: #007aff;
+        }
+        .btn-secondary:active {
+            background-color: #e5e5ea;
+        }
+        hr {
+            border: 0;
+            border-top: 1px solid #c6c6c8;
+            margin: 30px 0;
+            opacity: 0.5;
+        }
+        h3 {
+            font-size: 13px;
+            text-transform: uppercase;
+            color: #86868b;
+            letter-spacing: 0.5px;
+            margin-bottom: 15px;
+            text-align: left;
+            padding-left: 5px;
+        }
+        #status {
+            margin-top: 15px;
+            font-weight: 500;
+            font-size: 14px;
+            min-height: 20px;
+            transition: all 0.3s ease;
+        }
+        .success { color: #34c759; }
+        .error { color: #ff3b30; }
+        .loading { color: #007aff; }
+        
+        /* Hiệu ứng loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(0,122,255,0.3);
+            border-radius: 50%;
+            border-top-color: #007aff;
+            animation: spin 1s ease-in-out infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MuaCert</h1>
+        <p>Hệ thống lấy UDID tự động</p>
+        
+        <a href="/profile" class="btn">Tải Cấu Hình Lấy UDID</a>
+        
+        <hr>
+        
+        <h3>Khu Vực Quản Trị</h3>
+        <button id="renewBtn" class="btn btn-secondary" onclick="triggerGitHubAction()">Gia Hạn Chứng Chỉ SSL</button>
+        <div id="status"></div>
+    </div>
+
+    <script>
+        async function triggerGitHubAction() {
+            const btn = document.getElementById('renewBtn');
+            const status = document.getElementById('status');
+            
+            if (!confirm("Hành động này sẽ kích hoạt GitHub Actions để tự động xin chứng chỉ mới. Bạn có muốn tiếp tục?")) {
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            status.className = 'loading';
+            status.innerHTML = '<div class="spinner"></div> Đang gửi yêu cầu đến GitHub...';
+
+            try {
+                // Gọi API trung gian để kích hoạt GitHub Actions
+                const response = await fetch('/api/trigger-github', {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    status.className = 'success';
+                    status.innerText = '✅ Đã gửi lệnh thành công! GitHub đang chạy ngầm để gia hạn SSL (mất khoảng 2-3 phút).';
+                } else {
+                    status.className = 'error';
+                    status.innerText = '❌ ' + data.message;
+                }
+            } catch (error) {
+                status.className = 'error';
+                status.innerText = '❌ Lỗi kết nối: Vui lòng thử lại sau.';
+            } finally {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }
+        }
+    </script>
+</body>
+</html>

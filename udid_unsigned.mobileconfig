@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>PayloadContent</key>
+	<dict>
+		<key>DeviceAttributes</key>
+		<array>
+			<string>UDID</string>
+			<string>DEVICE_NAME</string>
+			<string>VERSION</string>
+			<string>PRODUCT</string>
+			<string>MAC_ADDRESS_EN0</string>
+			<string>IMEI</string>
+			<string>ICCID</string>
+		</array>
+		<key>URL</key>
+		<string>https://muacert.com/uuid/endpoint</string>
+	</dict>
+	<key>PayloadDescription</key>
+	<string>Bấm vào cài đặt để lấy UDID của máy bạn 
+- muacert.com
+Website Bán Chứng Chỉ Chính Thức
+- Vũ Văn Khơi
+- khoindvn</string>
+	<key>PayloadDisplayName</key>
+	<string>Lấy UDID Thiết Bị</string>
+	<key>PayloadIdentifier</key>
+	<string>muacert.com</string>
+	<key>PayloadOrganization</key>
+	<string>khơindvn</string>
+	<key>PayloadType</key>
+	<string>Profile Service</string>
+	<key>PayloadUUID</key>
+	<string>01703BFB-D863-4897-8A09-DD1E9A58D266</string>
+	<key>PayloadVersion</key>
+	<integer>1</integer>
+</dict>
+</plist>
