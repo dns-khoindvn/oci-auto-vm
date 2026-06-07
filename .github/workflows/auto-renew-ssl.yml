@@ -46,9 +46,9 @@ jobs:
           KEY_PATH=~/.acme.sh/muacert.com_ecc/muacert.com.key
           FULLCHAIN_PATH=~/.acme.sh/muacert.com_ecc/fullchain.cer
           
-          # Upload lên Cloudflare KV
-          wrangler kv:key put --namespace-id=$KV_NAMESPACE_ID "cert.pem" --path="$CERT_PATH"
-          wrangler kv:key put --namespace-id=$KV_NAMESPACE_ID "key.pem" --path="$KEY_PATH"
-          wrangler kv:key put --namespace-id=$KV_NAMESPACE_ID "ca.pem" --path="$FULLCHAIN_PATH"
+          # Upload lên Cloudflare KV (Sửa lại cú pháp wrangler v3)
+          wrangler kv key put --namespace-id=$KV_NAMESPACE_ID "cert.pem" --path="$CERT_PATH"
+          wrangler kv key put --namespace-id=$KV_NAMESPACE_ID "key.pem" --path="$KEY_PATH"
+          wrangler kv key put --namespace-id=$KV_NAMESPACE_ID "ca.pem" --path="$FULLCHAIN_PATH"
           
           echo "Đã cập nhật chứng chỉ ZeroSSL lên Cloudflare KV thành công!"
