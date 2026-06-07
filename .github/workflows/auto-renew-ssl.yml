@@ -1,0 +1,48 @@
+name: Auto Renew ZeroSSL and Update Cloudflare KV
+
+on:
+  schedule:
+    - cron: '0 0 1 */2 *' # Chạy 2 tháng 1 lần (ZeroSSL có hạn 90 ngày)
+  workflow_dispatch: # Cho phép chạy thủ công
+
+jobs:
+  renew-and-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install acme.sh
+        run: |
+          curl https://get.acme.sh | sh -s email=admin@muacert.com
+          echo "$HOME/.acme.sh" >> $GITHUB_PATH
+
+      - name: Register ZeroSSL Account
+        env:
+          ZEROSSL_EMAIL: ${{ secrets.ZEROSSL_EMAIL }}
+        run: |
+          ~/.acme.sh/acme.sh --register-account -m $ZEROSSL_EMAIL --server zerossl
+
+      - name: Issue ZeroSSL Certificate via Cloudflare DNS
+        env:
+          CF_Token: ${{ secrets.CF_API_TOKEN }}
+          CF_Account_ID: ${{ secrets.CF_ACCOUNT_ID }}
+        run: |
+          ~/.acme.sh/acme.sh --issue --dns dns_cf -d muacert.com --server zerossl
+
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      - name: Upload Certificates to Cloudflare KV
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          KV_NAMESPACE_ID: ${{ secrets.KV_NAMESPACE_ID }}
+        run: |
+          CERT_PATH=~/.acme.sh/muacert.com_ecc/muacert.com.cer
+          KEY_PATH=~/.acme.sh/muacert.com_ecc/muacert.com.key
+          FULLCHAIN_PATH=~/.acme.sh/muacert.com_ecc/fullchain.cer
+          
+          # Upload lên Cloudflare KV
+          wrangler kv:key put --namespace-id=$KV_NAMESPACE_ID "cert.pem" --path="$CERT_PATH"
+          wrangler kv:key put --namespace-id=$KV_NAMESPACE_ID "key.pem" --path="$KEY_PATH"
+          wrangler kv:key put --namespace-id=$KV_NAMESPACE_ID "ca.pem" --path="$FULLCHAIN_PATH"
+          
+          echo "Đã cập nhật chứng chỉ ZeroSSL lên Cloudflare KV thành công!"
