@@ -31,7 +31,7 @@ jobs:
           CF_Token: ${{ secrets.CF_API_TOKEN }}
           CF_Account_ID: ${{ secrets.CF_ACCOUNT_ID }}
         run: |
-          ~/.acme.sh/acme.sh --issue --dns dns_cf -d muacert.com
+          ~/.acme.sh/acme.sh --issue --dns dns_cf -d muacert.com --keylength 2048
 
       - name: Install Wrangler
         run: npm install -g wrangler
@@ -42,9 +42,9 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
           KV_NAMESPACE_ID: ${{ secrets.KV_NAMESPACE_ID }}
         run: |
-          CERT_PATH=~/.acme.sh/muacert.com_ecc/muacert.com.cer
-          KEY_PATH=~/.acme.sh/muacert.com_ecc/muacert.com.key
-          FULLCHAIN_PATH=~/.acme.sh/muacert.com_ecc/fullchain.cer
+          CERT_PATH=~/.acme.sh/muacert.com/muacert.com.cer
+          KEY_PATH=~/.acme.sh/muacert.com/muacert.com.key
+          FULLCHAIN_PATH=~/.acme.sh/muacert.com/fullchain.cer
           
           # Upload lên Cloudflare KV (Sửa lại cú pháp wrangler v3)
           wrangler kv key put --namespace-id=$KV_NAMESPACE_ID "cert.pem" --path="$CERT_PATH"
@@ -57,7 +57,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: muacert_ssl_certificates
-          path: ~/.acme.sh/muacert.com_ecc/
+          path: ~/.acme.sh/muacert.com/
           retention-days: 7
 
       - name: Checkout Repository
@@ -73,9 +73,9 @@ jobs:
 
       - name: Sign Mobileconfig Profile
         run: |
-          CERT_PATH=~/.acme.sh/muacert.com_ecc/muacert.com.cer
-          KEY_PATH=~/.acme.sh/muacert.com_ecc/muacert.com.key
-          FULLCHAIN_PATH=~/.acme.sh/muacert.com_ecc/fullchain.cer
+          CERT_PATH=~/.acme.sh/muacert.com/muacert.com.cer
+          KEY_PATH=~/.acme.sh/muacert.com/muacert.com.key
+          FULLCHAIN_PATH=~/.acme.sh/muacert.com/fullchain.cer
           
           cat << 'EOF' > sign_profile.js
           const fs = require('fs');
