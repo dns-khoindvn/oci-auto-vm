@@ -6,6 +6,9 @@ on:
   workflow_dispatch: # Cho phép chạy thủ công
   repository_dispatch:
     types: [renew-ssl] # Cho phép Cloudflare Pages gọi qua API
+  push:
+    branches:
+      - main # TỰ ĐỘNG CHẠY NGAY LẬP TỨC KHI BẠN PUSH CODE
 
 jobs:
   renew-and-update:
