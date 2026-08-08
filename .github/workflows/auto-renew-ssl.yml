@@ -181,8 +181,13 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add udid.mobileconfig khoindvn.mobileconfig
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update signed mobileconfig profiles [skip ci]" && git push)
+          git add udid.mobileconfig khoindvn.mobileconfig 2>/dev/null || true
+          if ! git diff --staged --quiet; then
+            git commit -m "Auto-update signed mobileconfig profiles [skip ci]"
+            git push
+          else
+            echo "Không có thay đổi trong các file mobileconfig."
+          fi
 
       - name: Upload Signed Profile to GitHub Release 'DNS'
         env:
