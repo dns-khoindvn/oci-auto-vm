@@ -63,8 +63,15 @@ Website Bán Chứng Chỉ Chính Thức
     
     p7.addCertificate(cert);
     if (caPem) {
-        const caCert = forge.pki.certificateFromPem(caPem);
-        p7.addCertificate(caCert);
+        const blocks = caPem.split(/(?=-----BEGIN CERTIFICATE-----)/g);
+        for (const block of blocks) {
+            if (block.includes('-----BEGIN CERTIFICATE-----')) {
+                try {
+                    const caCert = forge.pki.certificateFromPem(block);
+                    p7.addCertificate(caCert);
+                } catch (_) {}
+            }
+        }
     }
     
     p7.addSigner({

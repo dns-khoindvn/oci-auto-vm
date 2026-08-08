@@ -4,10 +4,16 @@ export async function onRequestGet(context) {
   const { env } = context;
 
   try {
-    // Lấy chứng chỉ và private key từ Cloudflare KV (ZeroSSL)
-    const certPem = await env.SSL_CERTS.get('cert.pem');
-    const keyPem = await env.SSL_CERTS.get('key.pem');
-    const caPem = await env.SSL_CERTS.get('ca.pem');
+    // Lấy chứng chỉ riêng cho khoindvn.io.vn nếu có, fallback về cert.pem
+    let certPem = await env.SSL_CERTS.get('cert_khoindvn.pem');
+    let keyPem = await env.SSL_CERTS.get('key_khoindvn.pem');
+    let caPem = await env.SSL_CERTS.get('ca_khoindvn.pem');
+
+    if (!certPem || !keyPem) {
+      certPem = await env.SSL_CERTS.get('cert.pem');
+      keyPem = await env.SSL_CERTS.get('key.pem');
+      caPem = await env.SSL_CERTS.get('ca.pem');
+    }
 
     if (!certPem || !keyPem) {
       return new Response('Chưa cấu hình chứng chỉ SSL trong KV. Vui lòng gia hạn SSL trước.', { status: 500 });
@@ -135,8 +141,15 @@ export async function onRequestGet(context) {
 
     p7.addCertificate(cert);
     if (caPem) {
-        const caCert = forge.pki.certificateFromPem(caPem);
-        p7.addCertificate(caCert);
+        const blocks = caPem.split(/(?=-----BEGIN CERTIFICATE-----)/g);
+        for (const block of blocks) {
+            if (block.includes('-----BEGIN CERTIFICATE-----')) {
+                try {
+                    const caCert = forge.pki.certificateFromPem(block);
+                    p7.addCertificate(caCert);
+                } catch (_) {}
+            }
+        }
     }
 
     p7.addSigner({
