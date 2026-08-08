@@ -10,13 +10,16 @@ on:
     branches:
       - main # TỰ ĐỘNG CHẠY NGAY LẬP TỨC KHI BẠN PUSH CODE
 
+permissions:
+  contents: write
+
 jobs:
   renew-and-update:
     runs-on: ubuntu-latest
     steps:
       - name: Install acme.sh
         run: |
-          curl https://get.acme.sh | sh -s email=admin@muacert.com
+          curl https://get.acme.sh | sh -s email=admin@khoindvn.io.vn
           echo "$HOME/.acme.sh" >> $GITHUB_PATH
 
       - name: Set Default CA to ZeroSSL
@@ -34,7 +37,7 @@ jobs:
           CF_Token: ${{ secrets.CF_API_TOKEN }}
           CF_Account_ID: ${{ secrets.CF_ACCOUNT_ID }}
         run: |
-          ~/.acme.sh/acme.sh --issue --dns dns_cf -d muacert.com --keylength 2048
+          ~/.acme.sh/acme.sh --issue --dns dns_cf -d khoindvn.io.vn -d muacert.com --keylength 2048
 
       - name: Install Wrangler
         run: npm install -g wrangler
@@ -45,9 +48,9 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
           KV_NAMESPACE_ID: ${{ secrets.KV_NAMESPACE_ID }}
         run: |
-          CERT_PATH=~/.acme.sh/muacert.com/muacert.com.cer
-          KEY_PATH=~/.acme.sh/muacert.com/muacert.com.key
-          FULLCHAIN_PATH=~/.acme.sh/muacert.com/fullchain.cer
+          CERT_PATH=~/.acme.sh/khoindvn.io.vn/khoindvn.io.vn.cer
+          KEY_PATH=~/.acme.sh/khoindvn.io.vn/khoindvn.io.vn.key
+          FULLCHAIN_PATH=~/.acme.sh/khoindvn.io.vn/fullchain.cer
           
           # Upload lên Cloudflare KV (Thêm cờ --remote để đẩy lên server thật)
           wrangler kv key put --namespace-id=$KV_NAMESPACE_ID "cert.pem" --path="$CERT_PATH" --remote
@@ -59,8 +62,8 @@ jobs:
       - name: Upload Certificates as Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: muacert_ssl_certificates
-          path: ~/.acme.sh/muacert.com/
+          name: ssl_certificates
+          path: ~/.acme.sh/khoindvn.io.vn/
           retention-days: 7
 
       - name: Checkout Repository
@@ -76,9 +79,9 @@ jobs:
 
       - name: Sign Mobileconfig Profile
         run: |
-          CERT_PATH=~/.acme.sh/muacert.com/muacert.com.cer
-          KEY_PATH=~/.acme.sh/muacert.com/muacert.com.key
-          FULLCHAIN_PATH=~/.acme.sh/muacert.com/fullchain.cer
+          CERT_PATH=~/.acme.sh/khoindvn.io.vn/khoindvn.io.vn.cer
+          KEY_PATH=~/.acme.sh/khoindvn.io.vn/khoindvn.io.vn.key
+          FULLCHAIN_PATH=~/.acme.sh/khoindvn.io.vn/fullchain.cer
           
           cat << 'EOF' > sign_profile.js
           const fs = require('fs');
@@ -87,47 +90,73 @@ jobs:
           const certPem = fs.readFileSync(process.argv[2], 'utf8');
           const keyPem = fs.readFileSync(process.argv[3], 'utf8');
           const caPem = fs.readFileSync(process.argv[4], 'utf8');
-          const unsignedProfile = fs.readFileSync('udid_unsigned.mobileconfig', 'utf8');
 
-          const p7 = forge.pkcs7.createSignedData();
-          p7.content = forge.util.createBuffer(unsignedProfile, 'utf8');
-          
-          const cert = forge.pki.certificateFromPem(certPem);
-          const privateKey = forge.pki.privateKeyFromPem(keyPem);
-          
-          p7.addCertificate(cert);
-          if (caPem) {
-              const caCert = forge.pki.certificateFromPem(caPem);
-              p7.addCertificate(caCert);
-          }
-          
-          p7.addSigner({
-            key: privateKey,
-            certificate: cert,
-            digestAlgorithm: forge.pki.oids.sha256,
-            authenticatedAttributes: [
-              { type: forge.pki.oids.contentType, value: forge.pki.oids.data },
-              { type: forge.pki.oids.messageDigest },
-              { type: forge.pki.oids.signingTime }
-            ]
-          });
+          function signMobileconfig(inputFile, outputFile) {
+            if (!fs.existsSync(inputFile)) {
+              console.log(`Bỏ qua ${inputFile}: không tìm thấy file.`);
+              return;
+            }
+            const unsignedProfile = fs.readFileSync(inputFile, 'utf8');
 
-          p7.sign();
-          const signedDer = forge.asn1.toDer(p7.toAsn1()).getBytes();
-          
-          const buffer = Buffer.alloc(signedDer.length);
-          for (let i = 0; i < signedDer.length; i++) {
-              buffer[i] = signedDer.charCodeAt(i);
+            const p7 = forge.pkcs7.createSignedData();
+            p7.content = forge.util.createBuffer(unsignedProfile, 'utf8');
+            
+            const cert = forge.pki.certificateFromPem(certPem);
+            const privateKey = forge.pki.privateKeyFromPem(keyPem);
+            
+            p7.addCertificate(cert);
+            if (caPem) {
+                const caCert = forge.pki.certificateFromPem(caPem);
+                p7.addCertificate(caCert);
+            }
+            
+            p7.addSigner({
+              key: privateKey,
+              certificate: cert,
+              digestAlgorithm: forge.pki.oids.sha256,
+              authenticatedAttributes: [
+                { type: forge.pki.oids.contentType, value: forge.pki.oids.data },
+                { type: forge.pki.oids.messageDigest },
+                { type: forge.pki.oids.signingTime }
+              ]
+            });
+
+            p7.sign();
+            const signedDer = forge.asn1.toDer(p7.toAsn1()).getBytes();
+            
+            const buffer = Buffer.alloc(signedDer.length);
+            for (let i = 0; i < signedDer.length; i++) {
+                buffer[i] = signedDer.charCodeAt(i);
+            }
+            
+            fs.writeFileSync(outputFile, buffer);
+            console.log(`Đã ký thành công ${inputFile} -> ${outputFile}`);
           }
-          
-          fs.writeFileSync('udid.mobileconfig', buffer);
+
+          signMobileconfig('udid_unsigned.mobileconfig', 'udid.mobileconfig');
+          signMobileconfig('khoindvn_unsigned.mobileconfig', 'khoindvn.mobileconfig');
           EOF
           
           node sign_profile.js "$CERT_PATH" "$KEY_PATH" "$FULLCHAIN_PATH"
 
-      - name: Upload Signed Profile as Artifact
+      - name: Commit and Push Signed Mobileconfig Files
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add udid.mobileconfig khoindvn.mobileconfig
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update signed mobileconfig profiles [skip ci]" && git push)
+
+      - name: Upload Signed Profile to GitHub Release 'DNS'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload DNS khoindvn.mobileconfig udid.mobileconfig --clobber || gh release create DNS khoindvn.mobileconfig udid.mobileconfig --title "DNS" --notes "File profile khoindvn và udid đã ký tự động"
+
+      - name: Upload Signed Profiles as Artifact
         uses: actions/upload-artifact@v4
         with:
           name: signed_mobileconfig
-          path: udid.mobileconfig
+          path: |
+            udid.mobileconfig
+            khoindvn.mobileconfig
           retention-days: 7
