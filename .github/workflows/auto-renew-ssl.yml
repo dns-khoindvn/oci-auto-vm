@@ -19,7 +19,7 @@ jobs:
     steps:
       - name: Install acme.sh
         run: |
-          curl https://get.acme.sh | sh -s email=admin@muacert.com
+          curl https://get.acme.sh | sh -s email=admin@khoindvn.io.vn
           echo "$HOME/.acme.sh" >> $GITHUB_PATH
 
       - name: Set Default CA to ZeroSSL
@@ -32,12 +32,19 @@ jobs:
         run: |
           ~/.acme.sh/acme.sh --register-account -m $ZEROSSL_EMAIL
 
-      - name: Issue ZeroSSL Certificate via Cloudflare DNS
+      - name: Issue ZeroSSL Certificate for muacert.com
         env:
           CF_Token: ${{ secrets.CF_API_TOKEN }}
           CF_Account_ID: ${{ secrets.CF_ACCOUNT_ID }}
         run: |
           ~/.acme.sh/acme.sh --issue --dns dns_cf -d muacert.com --keylength 2048
+
+      - name: Issue ZeroSSL Certificate for khoindvn.io.vn
+        env:
+          CF_Token: ${{ secrets.CF_API_TOKEN }}
+          CF_Account_ID: ${{ secrets.CF_ACCOUNT_ID }}
+        run: |
+          ~/.acme.sh/acme.sh --issue --dns dns_cf -d khoindvn.io.vn --keylength 2048
 
       - name: Install Wrangler
         run: npm install -g wrangler
@@ -52,19 +59,12 @@ jobs:
           KEY_PATH=~/.acme.sh/muacert.com/muacert.com.key
           FULLCHAIN_PATH=~/.acme.sh/muacert.com/fullchain.cer
           
-          # Upload lên Cloudflare KV (Thêm cờ --remote để đẩy lên server thật)
+          # Upload lên Cloudflare KV
           wrangler kv key put --namespace-id=$KV_NAMESPACE_ID "cert.pem" --path="$CERT_PATH" --remote
           wrangler kv key put --namespace-id=$KV_NAMESPACE_ID "key.pem" --path="$KEY_PATH" --remote
           wrangler kv key put --namespace-id=$KV_NAMESPACE_ID "ca.pem" --path="$FULLCHAIN_PATH" --remote
           
-          echo "Đã cập nhật chứng chỉ ZeroSSL lên Cloudflare KV thành công!"
-
-      - name: Upload Certificates as Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ssl_certificates
-          path: ~/.acme.sh/muacert.com/
-          retention-days: 7
+          echo "Đã cập nhật chứng chỉ ZeroSSL muacert.com lên Cloudflare KV thành công!"
 
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -77,25 +77,25 @@ jobs:
       - name: Install node-forge
         run: npm install node-forge
 
-      - name: Sign Mobileconfig Profile
+      - name: Sign Mobileconfig Profiles
         run: |
-          CERT_PATH=~/.acme.sh/muacert.com/muacert.com.cer
-          KEY_PATH=~/.acme.sh/muacert.com/muacert.com.key
-          FULLCHAIN_PATH=~/.acme.sh/muacert.com/fullchain.cer
-          
           cat << 'EOF' > sign_profile.js
           const fs = require('fs');
           const forge = require('node-forge');
 
-          const certPem = fs.readFileSync(process.argv[2], 'utf8');
-          const keyPem = fs.readFileSync(process.argv[3], 'utf8');
-          const caPem = fs.readFileSync(process.argv[4], 'utf8');
-
-          function signMobileconfig(inputFile, outputFile) {
+          function signMobileconfig(inputFile, outputFile, certPath, keyPath, caPath) {
             if (!fs.existsSync(inputFile)) {
               console.log(`Bỏ qua ${inputFile}: không tìm thấy file.`);
               return;
             }
+            if (!fs.existsSync(certPath) || !fs.existsSync(keyPath)) {
+              console.log(`Bỏ qua ${inputFile}: không tìm thấy chứng chỉ ${certPath}`);
+              return;
+            }
+
+            const certPem = fs.readFileSync(certPath, 'utf8');
+            const keyPem = fs.readFileSync(keyPath, 'utf8');
+            const caPem = fs.existsSync(caPath) ? fs.readFileSync(caPath, 'utf8') : null;
             const unsignedProfile = fs.readFileSync(inputFile, 'utf8');
 
             const p7 = forge.pkcs7.createSignedData();
@@ -130,14 +130,29 @@ jobs:
             }
             
             fs.writeFileSync(outputFile, buffer);
-            console.log(`Đã ký thành công ${inputFile} -> ${outputFile}`);
+            console.log(`Đã ký thành công ${inputFile} (${certPath}) -> ${outputFile}`);
           }
 
-          signMobileconfig('udid_unsigned.mobileconfig', 'udid.mobileconfig');
-          signMobileconfig('khoindvn_unsigned.mobileconfig', 'khoindvn.mobileconfig');
+          // Ký udid.mobileconfig bằng cert muacert.com
+          signMobileconfig(
+            'udid_unsigned.mobileconfig',
+            'udid.mobileconfig',
+            process.env.HOME + '/.acme.sh/muacert.com/muacert.com.cer',
+            process.env.HOME + '/.acme.sh/muacert.com/muacert.com.key',
+            process.env.HOME + '/.acme.sh/muacert.com/fullchain.cer'
+          );
+
+          // Ký khoindvn.mobileconfig bằng cert khoindvn.io.vn
+          signMobileconfig(
+            'khoindvn_unsigned.mobileconfig',
+            'khoindvn.mobileconfig',
+            process.env.HOME + '/.acme.sh/khoindvn.io.vn/khoindvn.io.vn.cer',
+            process.env.HOME + '/.acme.sh/khoindvn.io.vn/khoindvn.io.vn.key',
+            process.env.HOME + '/.acme.sh/khoindvn.io.vn/fullchain.cer'
+          );
           EOF
           
-          node sign_profile.js "$CERT_PATH" "$KEY_PATH" "$FULLCHAIN_PATH"
+          node sign_profile.js
 
       - name: Commit and Push Signed Mobileconfig Files
         run: |
