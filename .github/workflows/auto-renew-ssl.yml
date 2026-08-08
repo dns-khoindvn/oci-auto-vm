@@ -19,7 +19,7 @@ jobs:
     steps:
       - name: Install acme.sh
         run: |
-          curl https://get.acme.sh | sh -s email=admin@khoindvn.io.vn
+          curl https://get.acme.sh | sh -s email=admin@muacert.com
           echo "$HOME/.acme.sh" >> $GITHUB_PATH
 
       - name: Set Default CA to ZeroSSL
@@ -37,7 +37,7 @@ jobs:
           CF_Token: ${{ secrets.CF_API_TOKEN }}
           CF_Account_ID: ${{ secrets.CF_ACCOUNT_ID }}
         run: |
-          ~/.acme.sh/acme.sh --issue --dns dns_cf -d khoindvn.io.vn -d muacert.com --keylength 2048
+          ~/.acme.sh/acme.sh --issue --dns dns_cf -d muacert.com --keylength 2048
 
       - name: Install Wrangler
         run: npm install -g wrangler
@@ -48,9 +48,9 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
           KV_NAMESPACE_ID: ${{ secrets.KV_NAMESPACE_ID }}
         run: |
-          CERT_PATH=~/.acme.sh/khoindvn.io.vn/khoindvn.io.vn.cer
-          KEY_PATH=~/.acme.sh/khoindvn.io.vn/khoindvn.io.vn.key
-          FULLCHAIN_PATH=~/.acme.sh/khoindvn.io.vn/fullchain.cer
+          CERT_PATH=~/.acme.sh/muacert.com/muacert.com.cer
+          KEY_PATH=~/.acme.sh/muacert.com/muacert.com.key
+          FULLCHAIN_PATH=~/.acme.sh/muacert.com/fullchain.cer
           
           # Upload lên Cloudflare KV (Thêm cờ --remote để đẩy lên server thật)
           wrangler kv key put --namespace-id=$KV_NAMESPACE_ID "cert.pem" --path="$CERT_PATH" --remote
@@ -63,7 +63,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ssl_certificates
-          path: ~/.acme.sh/khoindvn.io.vn/
+          path: ~/.acme.sh/muacert.com/
           retention-days: 7
 
       - name: Checkout Repository
@@ -79,9 +79,9 @@ jobs:
 
       - name: Sign Mobileconfig Profile
         run: |
-          CERT_PATH=~/.acme.sh/khoindvn.io.vn/khoindvn.io.vn.cer
-          KEY_PATH=~/.acme.sh/khoindvn.io.vn/khoindvn.io.vn.key
-          FULLCHAIN_PATH=~/.acme.sh/khoindvn.io.vn/fullchain.cer
+          CERT_PATH=~/.acme.sh/muacert.com/muacert.com.cer
+          KEY_PATH=~/.acme.sh/muacert.com/muacert.com.key
+          FULLCHAIN_PATH=~/.acme.sh/muacert.com/fullchain.cer
           
           cat << 'EOF' > sign_profile.js
           const fs = require('fs');
