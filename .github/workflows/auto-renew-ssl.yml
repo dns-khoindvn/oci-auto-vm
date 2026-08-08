@@ -37,14 +37,14 @@ jobs:
           CF_Token: ${{ secrets.CF_API_TOKEN }}
           CF_Account_ID: ${{ secrets.CF_ACCOUNT_ID }}
         run: |
-          ~/.acme.sh/acme.sh --issue --dns dns_cf -d muacert.com --keylength 2048
+          ~/.acme.sh/acme.sh --issue --dns dns_cf -d muacert.com --keylength 2048 || true
 
       - name: Issue ZeroSSL Certificate for khoindvn.io.vn
         env:
           CF_Token: ${{ secrets.CF_API_TOKEN }}
           CF_Account_ID: ${{ secrets.CF_ACCOUNT_ID }}
         run: |
-          ~/.acme.sh/acme.sh --issue --dns dns_cf -d khoindvn.io.vn --keylength 2048
+          ~/.acme.sh/acme.sh --issue --dns dns_cf -d khoindvn.io.vn --keylength 2048 || true
 
       - name: Install Wrangler
         run: npm install -g wrangler
@@ -55,16 +55,21 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
           KV_NAMESPACE_ID: ${{ secrets.KV_NAMESPACE_ID }}
         run: |
-          CERT_PATH=~/.acme.sh/muacert.com/muacert.com.cer
-          KEY_PATH=~/.acme.sh/muacert.com/muacert.com.key
-          FULLCHAIN_PATH=~/.acme.sh/muacert.com/fullchain.cer
-          
-          # Upload lên Cloudflare KV
-          wrangler kv key put --namespace-id=$KV_NAMESPACE_ID "cert.pem" --path="$CERT_PATH" --remote
-          wrangler kv key put --namespace-id=$KV_NAMESPACE_ID "key.pem" --path="$KEY_PATH" --remote
-          wrangler kv key put --namespace-id=$KV_NAMESPACE_ID "ca.pem" --path="$FULLCHAIN_PATH" --remote
-          
-          echo "Đã cập nhật chứng chỉ ZeroSSL muacert.com lên Cloudflare KV thành công!"
+          # Upload muacert.com certs
+          if [ -f ~/.acme.sh/muacert.com/muacert.com.cer ]; then
+            wrangler kv key put --namespace-id=$KV_NAMESPACE_ID "cert.pem" --path="$HOME/.acme.sh/muacert.com/muacert.com.cer" --remote
+            wrangler kv key put --namespace-id=$KV_NAMESPACE_ID "key.pem" --path="$HOME/.acme.sh/muacert.com/muacert.com.key" --remote
+            wrangler kv key put --namespace-id=$KV_NAMESPACE_ID "ca.pem" --path="$HOME/.acme.sh/muacert.com/fullchain.cer" --remote
+            echo "Đã cập nhật chứng chỉ muacert.com lên KV!"
+          fi
+
+          # Upload khoindvn.io.vn certs
+          if [ -f ~/.acme.sh/khoindvn.io.vn/khoindvn.io.vn.cer ]; then
+            wrangler kv key put --namespace-id=$KV_NAMESPACE_ID "cert_khoindvn.pem" --path="$HOME/.acme.sh/khoindvn.io.vn/khoindvn.io.vn.cer" --remote
+            wrangler kv key put --namespace-id=$KV_NAMESPACE_ID "key_khoindvn.pem" --path="$HOME/.acme.sh/khoindvn.io.vn/khoindvn.io.vn.key" --remote
+            wrangler kv key put --namespace-id=$KV_NAMESPACE_ID "ca_khoindvn.pem" --path="$HOME/.acme.sh/khoindvn.io.vn/fullchain.cer" --remote
+            echo "Đã cập nhật chứng chỉ khoindvn.io.vn lên KV!"
+          fi
 
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -106,8 +111,15 @@ jobs:
             
             p7.addCertificate(cert);
             if (caPem) {
-                const caCert = forge.pki.certificateFromPem(caPem);
-                p7.addCertificate(caCert);
+                const blocks = caPem.split(/(?=-----BEGIN CERTIFICATE-----)/g);
+                for (const block of blocks) {
+                    if (block.includes('-----BEGIN CERTIFICATE-----')) {
+                        try {
+                            const caCert = forge.pki.certificateFromPem(block);
+                            p7.addCertificate(caCert);
+                        } catch (_) {}
+                    }
+                }
             }
             
             p7.addSigner({
@@ -142,13 +154,24 @@ jobs:
             process.env.HOME + '/.acme.sh/muacert.com/fullchain.cer'
           );
 
-          // Ký khoindvn.mobileconfig bằng cert khoindvn.io.vn
+          // Ký khoindvn.mobileconfig bằng cert khoindvn.io.vn (fallback về muacert.com nếu chưa có)
+          let khoindvnCert = process.env.HOME + '/.acme.sh/khoindvn.io.vn/khoindvn.io.vn.cer';
+          let khoindvnKey = process.env.HOME + '/.acme.sh/khoindvn.io.vn/khoindvn.io.vn.key';
+          let khoindvnCa = process.env.HOME + '/.acme.sh/khoindvn.io.vn/fullchain.cer';
+
+          if (!fs.existsSync(khoindvnCert)) {
+            console.log('Chưa có cert khoindvn.io.vn, dùng tạm cert muacert.com...');
+            khoindvnCert = process.env.HOME + '/.acme.sh/muacert.com/muacert.com.cer';
+            khoindvnKey = process.env.HOME + '/.acme.sh/muacert.com/muacert.com.key';
+            khoindvnCa = process.env.HOME + '/.acme.sh/muacert.com/fullchain.cer';
+          }
+
           signMobileconfig(
             'khoindvn_unsigned.mobileconfig',
             'khoindvn.mobileconfig',
-            process.env.HOME + '/.acme.sh/khoindvn.io.vn/khoindvn.io.vn.cer',
-            process.env.HOME + '/.acme.sh/khoindvn.io.vn/khoindvn.io.vn.key',
-            process.env.HOME + '/.acme.sh/khoindvn.io.vn/fullchain.cer'
+            khoindvnCert,
+            khoindvnKey,
+            khoindvnCa
           );
           EOF
           
