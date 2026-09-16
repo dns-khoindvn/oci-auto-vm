@@ -54,13 +54,13 @@
 			<key>PayloadDisplayName</key>
 			<string>Anti Revoke</string>
 			<key>PayloadIdentifier</key>
-			<string>com.apple.dnsSettings.managed.bf38e538-86b3-4ec9-8ab2-2d51bb6bb3a7</string>
+			<string>com.apple.dnsSettings.managed.a6c41f92-7e35-4b08-bd63-19f2a5c870de</string>
 			<key>PayloadOrganization</key>
 			<string>khơindvn</string>
 			<key>PayloadType</key>
 			<string>com.apple.dnsSettings.managed</string>
 			<key>PayloadUUID</key>
-			<string>8F901D47-A361-4E74-89E3-0AA50D7AA093</string>
+			<string>D7A42E19-5C83-4F06-BE91-26D8A3C7504B</string>
 			<key>PayloadVersion</key>
 			<integer>1</integer>
 		</dict>
@@ -195,17 +195,17 @@
 			<key>IsRemovable</key>
 			<true/>
 			<key>Label</key>
-			<string>khơindvn</string>
+			<string>khoindvn.io.vn</string>
 			<key>PayloadDisplayName</key>
 			<string>Bio Khoindvn</string>
 			<key>PayloadIdentifier</key>
-			<string>com.apple.webClip.managed.FEF2BD5B-9F32-4CDF-BE7C-EE81BE8E6F4E</string>
+			<string>com.apple.webClip.managed.C4A91E73-6F25-4B08-A2DE-91D7E5C63F40</string>
 			<key>PayloadOrganization</key>
 			<string>khoindvn</string>
 			<key>PayloadType</key>
 			<string>com.apple.webClip.managed</string>
 			<key>PayloadUUID</key>
-			<string>43D724AA-D27A-4E37-A449-FE077475C52A</string>
+			<string>B8F31C62-5A47-4D90-9E13-72C4A6F5D081</string>
 			<key>PayloadVersion</key>
 			<integer>1</integer>
 			<key>Precomposed</key>
@@ -225,19 +225,19 @@
 			<key>PayloadType</key>
 			<string>com.apple.applicationaccess</string>
 			<key>PayloadUUID</key>
-			<string>045AD2D3-5CAC-4CFE-B086-19B4CF714CBF</string>
+			<string>6E8B24F1-93C7-4D50-A6E2-18F9B3C75D04</string>
 			<key>PayloadVersion</key>
 			<integer>1</integer>
 		</dict>
 	</array>
 	<key>PayloadDisplayName</key>
-	<string>khơindvn</string>
+	<string>khoindvn.io.vn</string>
 	<key>PayloadIdentifier</key>
-	<string>com.khoindvn.apple-dns.3caa7a2e-bacf-4481-82d7-eb127d157ae3</string>
+	<string>com.khoindvn.apple-dns.e61d4a90-7c32-4f8b-b5e9-21a76c0d3f84</string>
 	<key>PayloadType</key>
 	<string>Configuration</string>
 	<key>PayloadUUID</key>
-	<string>BFDED682-FCE5-42EF-92EB-F69351F49ED2</string>
+	<string>7A3F91C4-2B68-4D15-AE72-9C05F8B31D46</string>
 	<key>PayloadVersion</key>
 	<integer>1</integer>
 </dict>
