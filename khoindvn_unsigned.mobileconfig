@@ -32,7 +32,6 @@
 					<string>ocsp2.apple.com</string>
 					<string>valid.apple.com</string>
 					<string>vuvankhoi.com</string>
-					<string>analytics.apple.com</string>
 				</array>
 			</dict>
 			<key>OnDemandRules</key>
