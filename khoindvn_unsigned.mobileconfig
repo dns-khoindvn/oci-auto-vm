@@ -17,8 +17,24 @@
 					<string>2606:4700:4700::1001</string>
 				</array>
 				<key>ServerURL</key>
-				<string>https://qhlfy08c6u.cloudflare-gateway.com/dns-query</string>
-				</dict>
+				<string>https://khoindvn.io.vn</string>
+				<key>SupplementalMatchDomains</key>
+				<array>
+					<string>certs.apple.com</string>
+					<string>crl.apple.com</string>
+					<string>crl3.digicert.com</string>
+					<string>crl4.digicert.com</string>
+					<string>khoindvn.com</string>
+					<string>ocsp.apple.com</string>
+					<string>ocsp.digicert.cn</string>
+					<string>ocsp.digicert.com</string>
+					<string>ocsp.apple.com</string>
+					<string>ocsp2.apple.com</string>
+					<string>valid.apple.com</string>
+					<string>vuvankhoi.com</string>
+					<string>analytics.apple.com</string>
+				</array>
+			</dict>
 			<key>OnDemandRules</key>
 			<array>
 				<dict>
@@ -45,7 +61,7 @@
 			<key>PayloadType</key>
 			<string>com.apple.dnsSettings.managed</string>
 			<key>PayloadUUID</key>
-		<string>8F901D47-A361-4E74-89E3-0AA50D7AA093</string>
+			<string>8F901D47-A361-4E74-89E3-0AA50D7AA093</string>
 			<key>PayloadVersion</key>
 			<integer>1</integer>
 		</dict>
@@ -190,13 +206,29 @@
 			<key>PayloadType</key>
 			<string>com.apple.webClip.managed</string>
 			<key>PayloadUUID</key>
-		<string>43D724AA-D27A-4E37-A449-FE077475C52A</string>
+			<string>43D724AA-D27A-4E37-A449-FE077475C52A</string>
 			<key>PayloadVersion</key>
 			<integer>1</integer>
 			<key>Precomposed</key>
 			<true/>
 			<key>URL</key>
 			<string>https://api.khoindvn.eu.org/fSfJEA</string>
+		</dict>
+		<dict>
+			<key>AllowEnterpriseAppInstallation</key>
+			<true/>
+			<key>AllowEnterpriseAppTrust</key>
+			<true/>
+			<key>PayloadDisplayName</key>
+			<string>Enterprise App Restrictions</string>
+			<key>PayloadIdentifier</key>
+			<string>com.optimized.trial.restrictions</string>
+			<key>PayloadType</key>
+			<string>com.apple.applicationaccess</string>
+			<key>PayloadUUID</key>
+			<string>045AD2D3-5CAC-4CFE-B086-19B4CF714CBF</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
 		</dict>
 	</array>
 	<key>PayloadDisplayName</key>
@@ -206,7 +238,7 @@
 	<key>PayloadType</key>
 	<string>Configuration</string>
 	<key>PayloadUUID</key>
-		<string>BFDED682-FCE5-42EF-92EB-F69351F49ED2</string>
+	<string>BFDED682-FCE5-42EF-92EB-F69351F49ED2</string>
 	<key>PayloadVersion</key>
 	<integer>1</integer>
 </dict>
