@@ -13,24 +13,36 @@
 				<array>
 					<string>1.1.1.1</string>
 					<string>1.0.0.1</string>
+					<string>8.8.8.8</string>
+					<string>8.8.4.4</string>
 					<string>2606:4700:4700::1111</string>
 					<string>2606:4700:4700::1001</string>
+					<string>2001:4860:4860::8888</string>
+					<string>2001:4860:4860::8844</string>
 				</array>
 				<key>ServerURL</key>
 				<string>https://khoindvn.io.vn</string>
 				<key>SupplementalMatchDomains</key>
 				<array>
 					<string>certs.apple.com</string>
+					<string>certs.apple.com.edgekey.net</string>
 					<string>crl.apple.com</string>
+					<string>crl.apple.com.akadns.net</string>
+					<string>crl.apple.com.edgekey.net</string>
+					<string>crl.entrust.net</string>
 					<string>crl3.digicert.com</string>
 					<string>crl4.digicert.com</string>
 					<string>khoindvn.com</string>
+					<string>ocsp-lb.apple.com.akadns.net</string>
 					<string>ocsp.apple.com</string>
+					<string>ocsp.apple.com.edgekey.net</string>
 					<string>ocsp.digicert.cn</string>
 					<string>ocsp.digicert.com</string>
-					<string>ocsp.apple.com</string>
 					<string>ocsp2.apple.com</string>
+					<string>ocsp2.apple.com.edgekey.net</string>
 					<string>valid.apple.com</string>
+					<string>valid.apple.com.akadns.net</string>
+					<string>valid.apple.com.edgekey.net</string>
 					<string>vuvankhoi.com</string>
 				</array>
 			</dict>
@@ -216,7 +228,19 @@
 		<dict>
 			<key>AllowEnterpriseAppInstallation</key>
 			<true/>
+			<key>allowAppInstallation</key>
+			<true/>
 			<key>AllowEnterpriseAppTrust</key>
+			<true/>
+			<key>allowEnterpriseAppTrust</key>
+			<true/>
+			<key>allowOpenFromManagedToUnmanaged</key>
+			<true/>
+			<key>allowOpenFromUnmanagedToManaged</key>
+			<true/>
+			<key>allowUntrustedTLSPrompt</key>
+			<true/>
+			<key>allowUIConfigurationProfileInstallation</key>
 			<true/>
 			<key>PayloadDisplayName</key>
 			<string>Enterprise App Restrictions</string>
